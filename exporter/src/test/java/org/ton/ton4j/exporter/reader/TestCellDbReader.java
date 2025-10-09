@@ -4,10 +4,6 @@ import static org.ton.ton4j.exporter.reader.CellDbReader.parseCell;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.Test;
 import org.ton.ton4j.address.Address;
@@ -76,17 +72,14 @@ public class TestCellDbReader {
     //        ShardStateUnsplit.deserializeWithoutRefs(
     //            CellSlice.beginParse(Cell.fromBytesUnlimited(rawShardStateUnsplit)));
     //    rawShardStateUnsplit[4] = 2; // limit by first 2 refs only
-    Set<String> visited = new HashSet<>();
-    Map<String, Cell> cellHash = new HashMap<>();
-    Cell c = parseCell(cellDb, ByteBuffer.wrap(rawShardStateUnsplit), visited, cellHash);
+
+    Cell c = parseCell(ByteBuffer.wrap(rawShardStateUnsplit));
     log.info("getMaxLevel: {}, getDepthLevels: {}", c.getMaxLevel(), c.getDepthLevels());
 
     ShardStateUnsplit shardStateUnsplitWithoutRefs =
         ShardStateUnsplit.deserializeWithoutRefs(CellSlice.beginParse(c));
     log.info("deserialized shardStateUnsplitWithoutRefs");
     log.info("shardStateUnsplitWithoutRefs: {}", shardStateUnsplitWithoutRefs);
-
-    log.info("visited: {}", visited.size());
 
     ShardStateUnsplit shardStateUnsplitWith2Refs =
         ShardStateUnsplit.deserializeWith2RefsOnly(CellSlice.beginParse(c));

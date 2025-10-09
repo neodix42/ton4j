@@ -18,21 +18,23 @@ public class CellSerializationInfo {
 
   public static CellSerializationInfo create(int d1, int d2) {
 
-    int flags = d1;
-    int refsNum = flags & 0b111;
-    boolean special = (flags & 0b1000) != 0;
-    boolean withHashes = (flags & 0b10000) != 0;
-    LevelMask levelMask = new LevelMask(flags >> 5);
+    int refsNum = d1 & 7;
+    boolean special = (d1 & 8) != 0;
+    boolean withHashes = (d1 & 16) != 0;
+    LevelMask levelMask = new LevelMask(d1 >> 5);
 
     if (refsNum > 4) {
       throw new Error("too many refs in cell");
     }
-    int dataOffset =
-        4 + 2; // originally 2, but we add 4 since parsing from cell db and read previously flags
-    // (int)
+    int hashesOffset = 4 + 2;
+    int n = levelMask.getHashesCount();
+    int depthOffset = hashesOffset + (withHashes ? n * 32 : 0);
+    int dataOffset = depthOffset + (withHashes ? n * 2 : 0);
+
     int dataLength = (d2 >> 1) + (d2 & 1);
     boolean dataWithBits = (d2 & 1) != 0;
     int refsOffset = dataOffset + dataLength;
+    int endOffset = refsOffset + (refsNum * 0); // +ref_byte_size
 
     return CellSerializationInfo.builder()
         .refsCount(refsNum)
@@ -43,6 +45,7 @@ public class CellSerializationInfo {
         .dataLength(dataLength)
         .dataWithBits(dataWithBits)
         .refsOffset(refsOffset)
+        .endOffset(endOffset)
         .build();
   }
 }

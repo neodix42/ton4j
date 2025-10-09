@@ -1,6 +1,7 @@
 package org.ton.ton4j.exporter;
 
 import static java.util.Objects.isNull;
+import static org.ton.ton4j.exporter.reader.CellDbReader.parseCell;
 
 import ch.qos.logback.classic.Level;
 import ch.qos.logback.classic.Logger;
@@ -9,6 +10,7 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.ToNumberPolicy;
 import java.io.*;
+import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.concurrent.*;
@@ -20,18 +22,23 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.StopWatch;
 import org.apache.commons.lang3.tuple.Pair;
 import org.slf4j.LoggerFactory;
+import org.ton.ton4j.address.Address;
 import org.ton.ton4j.bitstring.BitString;
 import org.ton.ton4j.cell.*;
+import org.ton.ton4j.exporter.lazy.CellSliceLazy;
+import org.ton.ton4j.exporter.lazy.ShardAccountLazy;
+import org.ton.ton4j.exporter.lazy.ShardStateUnsplitLazy;
 import org.ton.ton4j.exporter.reader.*;
 import org.ton.ton4j.exporter.types.*;
+import org.ton.ton4j.tl.types.db.block.BlockIdExt;
 import org.ton.ton4j.tl.types.db.block.BlockInfo;
 import org.ton.ton4j.tl.types.db.blockdb.key.BlockDbValueKey;
+import org.ton.ton4j.tl.types.db.celldb.CellDbValue;
 import org.ton.ton4j.tl.types.db.filedb.key.BlockFileKey;
 import org.ton.ton4j.tl.types.db.files.index.IndexValue;
 import org.ton.ton4j.tl.types.db.lt.desc.DbLtDescKey;
 import org.ton.ton4j.tlb.Block;
 import org.ton.ton4j.tlb.BlockId;
-import org.ton.ton4j.tlb.BlockIdExt;
 import org.ton.ton4j.tlb.adapters.*;
 import org.ton.ton4j.utils.Utils;
 
@@ -1159,7 +1166,7 @@ public class Exporter {
     log.info("total archive packs found: {}", dbReader.getAllPackFiles().size());
   }
 
-  public Block getBlock(BlockIdExt blockIdExt) throws IOException {
+  public Block getBlock(org.ton.ton4j.tlb.BlockIdExt blockIdExt) throws IOException {
     org.ton.ton4j.tl.types.db.block.BlockIdExt blockIdExtTl =
         org.ton.ton4j.tl.types.db.block.BlockIdExt.builder()
             .seqno((int) blockIdExt.getSeqno())
@@ -1168,8 +1175,20 @@ public class Exporter {
             .fileHash(blockIdExt.fileHash)
             .rootHash(blockIdExt.rootHash)
             .build();
+    return getBlock(blockIdExtTl);
+  }
 
-    BlockFileKey blockFileKey = BlockFileKey.builder().blockIdExt(blockIdExtTl).build();
+  public Block getBlock(BlockIdExt blockIdExt) throws IOException {
+    //    org.ton.ton4j.tl.types.db.block.BlockIdExt blockIdExtTl =
+    //        org.ton.ton4j.tl.types.db.block.BlockIdExt.builder()
+    //            .seqno((int) blockIdExt.getSeqno())
+    //            .workchain(blockIdExt.getWorkchain())
+    //            .shard(blockIdExt.shard)
+    //            .fileHash(blockIdExt.fileHash)
+    //            .rootHash(blockIdExt.rootHash)
+    //            .build();
+
+    BlockFileKey blockFileKey = BlockFileKey.builder().blockIdExt(blockIdExt).build();
     //    log.info("key hash {}", blockFileKey.getKeyHash());
     int archiveIndex =
         dbReader
@@ -1186,7 +1205,7 @@ public class Exporter {
       if (blockIdExt.getWorkchain() == -1) {
         mcSeqno = blockIdExt.getSeqno();
       } else {
-        BlockDbValueKey key = BlockDbValueKey.builder().blockIdExt(blockIdExtTl).build();
+        BlockDbValueKey key = BlockDbValueKey.builder().blockIdExt(blockIdExt).build();
         BlockInfo blockInfo = archiveIndexReader.getDbInfoByHash(key.getKeyHash());
         mcSeqno = blockInfo.getMasterRefSeqno();
       }
@@ -1196,7 +1215,7 @@ public class Exporter {
               archiveIndex,
               blockIdExt.getSeqno(),
               blockIdExt.getWorkchain(),
-              blockIdExt.shard,
+              blockIdExt.getShard(),
               mcSeqno);
       //      log.info("found pack filename: {}", packFilename);
       try (PackageReader packageReader = new PackageReader(packFilename)) {
@@ -1261,6 +1280,16 @@ public class Exporter {
   // {}
   //  }
 
+  public org.ton.ton4j.tl.types.db.block.BlockIdExt getLastBlockIdExt() {
+    try (StateDbReader stateReader = new StateDbReader(tonDatabaseRootPath)) {
+
+      return stateReader.getLastBlockIdExt();
+
+    } catch (IOException e) {
+      throw new RuntimeException(e);
+    }
+  }
+
   /**
    * Gets the very last (most recently added) deserialized block from the RocksDB database. This
    * optimized version uses GlobalIndexDbReader to get temp package timestamps directly from the
@@ -1269,7 +1298,7 @@ public class Exporter {
    * @return The most recently added Block of masterchain, or null if no blocks are found
    * @throws IOException If an I/O error occurs while reading the database
    */
-  public Pair<BlockIdExt, Block> getLast() throws IOException {
+  public Pair<org.ton.ton4j.tlb.BlockIdExt, Block> getLast() throws IOException {
 
     try (GlobalIndexDbReader globalIndexReader = new GlobalIndexDbReader(tonDatabaseRootPath)) {
       IndexValue mainIndex = globalIndexReader.getMainIndexIndexValue();
@@ -1373,39 +1402,60 @@ public class Exporter {
    * @return The most recently added number of blocks of masterchain and any workchain.
    * @throws IOException If an I/O error occurs while reading the database
    */
-  public TreeMap<BlockIdExt, Block> getLast(int limit) throws IOException {
-    dbReader = new DbReader(tonDatabaseRootPath);
+  public TreeMap<org.ton.ton4j.tlb.BlockIdExt, Block> getLast(int limit) throws IOException {
 
-    try {
-      try (GlobalIndexDbReader globalIndexReader = new GlobalIndexDbReader(tonDatabaseRootPath)) {
-        IndexValue mainIndex = globalIndexReader.getMainIndexIndexValue();
+    try (GlobalIndexDbReader globalIndexReader = new GlobalIndexDbReader(tonDatabaseRootPath)) {
+      IndexValue mainIndex = globalIndexReader.getMainIndexIndexValue();
 
-        if (mainIndex == null || mainIndex.getTempPackages().isEmpty()) {
-          log.warn("No temp packages found in global index");
-          return null;
-        }
-
-        // Get temp package timestamps (they are Unix timestamps)
-        List<Integer> tempPackageTimestamps = mainIndex.getTempPackages();
-        log.debug("Found {} temp packages in global index", tempPackageTimestamps.size());
-
-        // Sort timestamps in descending order (most recent first)
-        List<Integer> sortedTimestamps = new ArrayList<>(tempPackageTimestamps);
-
-        // sort in descending order
-        sortedTimestamps.sort(Collections.reverseOrder());
-
-        // get the top (most recent, with the biggest timestamp)
-        Integer packageTimestamp = sortedTimestamps.get(0);
-        try (TempPackageIndexReader tempIndexReader =
-            new TempPackageIndexReader(tonDatabaseRootPath, packageTimestamp)) {
-          return tempIndexReader.getLast(limit);
-        }
+      if (mainIndex == null || mainIndex.getTempPackages().isEmpty()) {
+        log.warn("No temp packages found in global index");
+        return null;
       }
-    } finally {
-      if (dbReader != null) {
-        dbReader.close();
+
+      // Get temp package timestamps (they are Unix timestamps)
+      List<Integer> tempPackageTimestamps = mainIndex.getTempPackages();
+      log.debug("Found {} temp packages in global index", tempPackageTimestamps.size());
+
+      // Sort timestamps in descending order (most recent first)
+      List<Integer> sortedTimestamps = new ArrayList<>(tempPackageTimestamps);
+
+      // sort in descending order
+      sortedTimestamps.sort(Collections.reverseOrder());
+
+      // get the top (most recent, with the biggest timestamp)
+      Integer packageTimestamp = sortedTimestamps.get(0);
+      try (TempPackageIndexReader tempIndexReader =
+          new TempPackageIndexReader(tonDatabaseRootPath, packageTimestamp)) {
+        return tempIndexReader.getLast(limit);
       }
+    }
+  }
+
+  public ShardAccountLazy getShardAccountByAddress(BlockIdExt blockIdExt, Address address)
+      throws IOException {
+    try (CellDbReader cellDbReader = new CellDbReader(tonDatabaseRootPath)) {
+      String key = "desc" + Utils.bytesToBase64(Utils.sha256AsArray(blockIdExt.serializeBoxed()));
+      byte[] value = cellDbReader.getCellDb().get(key.getBytes());
+      log.info("key: {}, value: {}", key, Utils.bytesToHex(value));
+
+      CellDbValue cellDbValue = CellDbValue.deserialize(ByteBuffer.wrap(value));
+      log.info("cellDbValue: {}", cellDbValue);
+      byte[] shardStateRootHash = cellDbValue.rootHash;
+
+      // find full cell containing ShardStateUnsplit by shardStateRootHash
+      byte[] rawShardStateUnsplit = cellDbReader.getCellDb().get(shardStateRootHash);
+      //      log.info("rawShardStateUnsplit: {}", Utils.bytesToHex(rawShardStateUnsplit)); // top
+      // level cell
+
+      Cell c = parseCell(ByteBuffer.wrap(rawShardStateUnsplit));
+      //      log.info("getMaxLevel: {}, getDepthLevels: {}", c.getMaxLevel(), c.getDepthLevels());
+
+      ShardStateUnsplitLazy shardStateUnsplitLazy =
+          ShardStateUnsplitLazy.deserialize(
+              cellDbReader, CellSliceLazy.beginParse(cellDbReader, c));
+      //      FileUtils.write(new File("temp.txt"), shardStateUnsplitLazy.toString());
+      //      log.info("shardStateUnsplit lazy {}", shardStateUnsplitLazy);
+      return shardStateUnsplitLazy.getShardAccounts().getShardAccountByAddress(address);
     }
   }
 }

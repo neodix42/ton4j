@@ -1,7 +1,9 @@
 package org.ton.ton4j.cell;
 
 import java.io.Serializable;
+import lombok.Data;
 
+@Data
 public class PatriciaTreeNode implements Serializable {
   String prefix;
   int maxPrefixLength;
@@ -9,7 +11,7 @@ public class PatriciaTreeNode implements Serializable {
   PatriciaTreeNode left;
   PatriciaTreeNode right;
 
-  PatriciaTreeNode(
+  public PatriciaTreeNode(
       String prefix,
       int maxPrefixLength,
       Node leafNode,

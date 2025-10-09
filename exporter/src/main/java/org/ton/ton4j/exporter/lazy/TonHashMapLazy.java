@@ -1,4 +1,4 @@
-package org.ton.ton4j.cell;
+package org.ton.ton4j.exporter.lazy;
 
 import java.io.Serializable;
 import java.math.BigInteger;
@@ -7,10 +7,12 @@ import java.util.function.Function;
 import lombok.Data;
 import org.apache.commons.lang3.StringUtils;
 import org.ton.ton4j.bitstring.BitString;
+import org.ton.ton4j.cell.*;
+import org.ton.ton4j.utils.Utils;
 
 /** Ordinary Hashmap (Patricia Tree), with fixed length keys. */
 @Data
-public class TonHashMap implements Serializable {
+public class TonHashMapLazy implements Serializable {
 
   public HashMap<Object, Object> elements;
   int keySize;
@@ -24,30 +26,33 @@ public class TonHashMap implements Serializable {
    *
    * @param keySize key size in bits
    */
-  public TonHashMap(int keySize) {
+  public TonHashMapLazy(int keySize) {
     // Initialize with a reasonable initial capacity
     // Most TON dictionaries are small, so 16 is a good starting point
     elements = new LinkedHashMap<>(16, 0.75f);
     this.keySize = keySize;
   }
 
-  public List<Node> deserializeEdge(CellSlice edge, int keySize, final BitString key) {
-    // Pre-allocate list with estimated capacity
+  public List<Node> deserializeEdge(CellSliceLazy edge, int keySize, final BitString key) {
+
     if (edge.type == CellType.PRUNED_BRANCH) {
-      //      System.out.println("TonHashMap: pruned branch in cell");
       return new ArrayList<>();
     }
     List<Node> nodes = new ArrayList<>(4);
     BitString l = deserializeLabel(edge, keySize - key.getUsedBits());
     key.writeBitString(l);
     if (key.getUsedBits() == keySize) {
-      Cell value = CellBuilder.beginCell().storeSlice(edge).endCell();
+      Cell value = CellBuilder.beginCell().storeSliceLazy(edge.bits, edge.getHashes()).endCell();
       nodes.add(new Node(key, value));
       return nodes;
     }
 
-    for (int j = 0; j < edge.refs.size(); j++) {
-      CellSlice forkEdge = CellSlice.beginParse(edge.refs.get(j));
+    for (int j = 0; j < edge.hashes.length / 32; j++) {
+      byte[] hash = Utils.slice(edge.hashes, (j * 32), 32);
+      Cell refCell = edge.getRefByHash(hash);
+
+      CellSliceLazy forkEdge = CellSliceLazy.beginParse(edge.cellDbReader, refCell);
+
       BitString forkKey = key.clone();
       forkKey.writeBit(j != 0);
       nodes.addAll(deserializeEdge(forkEdge, keySize, forkKey));
@@ -57,10 +62,10 @@ public class TonHashMap implements Serializable {
 
   /** Loads HashMap and parses keys and values HashMap X Y; */
   void deserialize(
-      CellSlice c, Function<BitString, Object> keyParser, Function<Cell, Object> valueParser) {
+      CellSliceLazy c, Function<BitString, Object> keyParser, Function<Cell, Object> valueParser) {
     List<Node> nodes = deserializeEdge(c, keySize, new BitString(keySize));
     for (Node node : nodes) {
-      elements.put(keyParser.apply(node.key), valueParser.apply(node.value));
+      elements.put(keyParser.apply(node.getKey()), valueParser.apply(node.getValue()));
     }
   }
 
@@ -70,7 +75,7 @@ public class TonHashMap implements Serializable {
    * @param nodes list which contains nodes
    * @return tree node
    */
-  public PatriciaTreeNode splitTree(List<Node> nodes) {
+  PatriciaTreeNode splitTree(List<Node> nodes) {
     if (nodes.size() == 1) {
       return new PatriciaTreeNode("", 0, nodes.get(0), null, null);
     }
@@ -79,7 +84,7 @@ public class TonHashMap implements Serializable {
     List<Node> right = new ArrayList<>();
 
     for (Node node : nodes) {
-      boolean lr = node.key.readBit();
+      boolean lr = node.getKey().readBit();
 
       if (lr) {
         right.add(node);
@@ -107,30 +112,34 @@ public class TonHashMap implements Serializable {
    * @param m maximal possible length of prefix
    * @return flattened tree node
    */
-  public PatriciaTreeNode flatten(PatriciaTreeNode node, int m) {
+  PatriciaTreeNode flatten(PatriciaTreeNode node, int m) {
     if (node == null) {
       return null;
     }
 
-    if (node.maxPrefixLength == 0) {
-      node.maxPrefixLength = m;
+    if (node.getMaxPrefixLength() == 0) {
+      node.setMaxPrefixLength(m);
     }
 
-    if (node.leafNode != null) {
+    if (node.getLeafNode() != null) {
       return node;
     }
 
-    PatriciaTreeNode left = node.left;
-    PatriciaTreeNode right = node.right;
+    PatriciaTreeNode left = node.getLeft();
+    PatriciaTreeNode right = node.getRight();
 
     if (left == null) {
-      return flatten(new PatriciaTreeNode(node.prefix + "1", m, null, right.left, right.right), m);
+      return flatten(
+          new PatriciaTreeNode(node.getPrefix() + "1", m, null, right.getLeft(), right.getRight()),
+          m);
     } else if (right == null) {
-      return flatten(new PatriciaTreeNode(node.prefix + "0", m, null, left.left, left.right), m);
+      return flatten(
+          new PatriciaTreeNode(node.getPrefix() + "0", m, null, left.getLeft(), left.getRight()),
+          m);
     } else {
-      node.maxPrefixLength = m;
-      node.left = flatten(left, m - node.prefix.length() - 1);
-      node.right = flatten(right, m - node.prefix.length() - 1);
+      node.setMaxPrefixLength(m);
+      node.setLeft(flatten(left, m - node.getPrefix().length() - 1));
+      node.setRight(flatten(right, m - node.getPrefix().length() - 1));
       return node;
     }
   }
@@ -185,7 +194,7 @@ public class TonHashMap implements Serializable {
    * @param m int maximal possible length of the label
    * @param builder Cell to which label will be serialized
    */
-  void serialize_label(String label, int m, CellBuilder builder) {
+  public void serialize_label(String label, int m, CellBuilder builder) {
     int t = detectLabelType(label, m);
     int sizeOfM = BigInteger.valueOf(m).bitLength();
     if (t == 0) {
@@ -223,21 +232,22 @@ public class TonHashMap implements Serializable {
    *     label, leaf or left fork, right fork]
    * @param builder Cell to which edge will be serialized
    */
-  void serialize_edge(PatriciaTreeNode node, CellBuilder builder) {
+  public void serialize_edge(PatriciaTreeNode node, CellBuilder builder) {
     if (node == null) {
       return;
     }
-    if (node.leafNode != null) { // contains leaf
-      BitString bs = node.leafNode.key.readBits(node.leafNode.key.getUsedBits());
-      node.prefix = bs.toBitString();
-      serialize_label(node.prefix, node.maxPrefixLength, builder);
-      builder.storeCell(node.leafNode.value);
+    if (node.getLeafNode() != null) { // contains leaf
+      BitString bs =
+          node.getLeafNode().getKey().readBits(node.getLeafNode().getKey().getUsedBits());
+      node.setPrefix(bs.toBitString());
+      serialize_label(node.getPrefix(), node.getMaxPrefixLength(), builder);
+      builder.storeCell(node.getLeafNode().getValue());
     } else { // contains fork
-      serialize_label(node.prefix, node.maxPrefixLength, builder);
+      serialize_label(node.getPrefix(), node.getMaxPrefixLength(), builder);
       CellBuilder leftCell = CellBuilder.beginCell();
-      serialize_edge(node.left, leftCell);
+      serialize_edge(node.getLeft(), leftCell);
       CellBuilder rightCell = CellBuilder.beginCell();
-      serialize_edge(node.right, rightCell);
+      serialize_edge(node.getRight(), rightCell);
       builder.storeRef(leftCell.endCell());
       builder.storeRef(rightCell.endCell());
     }
@@ -268,7 +278,7 @@ public class TonHashMap implements Serializable {
    * @param edge cell
    * @param m length at most possible bits of n (key)
    */
-  public BitString deserializeLabel(CellSlice edge, int m) {
+  public BitString deserializeLabel(CellSliceLazy edge, int m) {
     if (!edge.loadBit()) {
       // hml_short$0 {m:#} {n:#} len:(Unary ~n) s:(n * Bit) = HmLabel ~n m;
       return deserializeLabelShort(edge);
@@ -281,7 +291,7 @@ public class TonHashMap implements Serializable {
     return deserializeLabelSame(edge, m);
   }
 
-  private BitString deserializeLabelShort(CellSlice edge) {
+  private BitString deserializeLabelShort(CellSliceLazy edge) {
     // Find the length by counting consecutive 1s until we hit a 0
     int length = 0;
     while (length < edge.getRestBits() && edge.preloadBitAt(length + 1)) {
@@ -291,12 +301,12 @@ public class TonHashMap implements Serializable {
     return edge.loadBits(length);
   }
 
-  private BitString deserializeLabelLong(CellSlice edge, int m) {
+  private BitString deserializeLabelLong(CellSliceLazy edge, int m) {
     BigInteger length = edge.loadUint((int) Math.ceil(log2((m + 1))));
     return edge.loadBits(length.intValue());
   }
 
-  private BitString deserializeLabelSame(CellSlice edge, int m) {
+  private BitString deserializeLabelSame(CellSliceLazy edge, int m) {
     boolean v = edge.loadBit();
     BigInteger length = edge.loadUint((int) Math.ceil(log2((m + 1))));
     BitString r = new BitString(length.intValue());
@@ -363,90 +373,12 @@ public class TonHashMap implements Serializable {
     throw new Error("value not found at index " + index);
   }
 
-  public Cell buildMerkleProof(
-      Object key,
-      Function<Object, BitString> keySerializer,
-      Function<Object, Cell> valueSerializer) {
-    Cell dictCell =
-        CellBuilder.beginCell()
-            .storeDictInLine(this.serialize(keySerializer, valueSerializer))
-            .endCell();
-
-    Cell cell =
-        generateMerkleProof(
-            "",
-            CellSlice.beginParse(dictCell),
-            keySize,
-            padString(keySerializer.apply(key).toBitString(), keySize, '0'));
-
-    return convertToMerkleProof(cell);
-  }
-
   private int readUnaryLength(CellSlice slice) {
     int res = 0;
     while (slice.loadBit()) {
       res++;
     }
     return res;
-  }
-
-  private Cell generateMerkleProof(String prefix, CellSlice slice, int n, String key) {
-    Cell originalCell = CellBuilder.beginCell().storeSlice(slice).endCell();
-
-    int lb0 = slice.loadBit() ? 1 : 0;
-    int prefixLength;
-    StringBuilder pp = new StringBuilder(prefix);
-
-    if (lb0 == 0) {
-      // Short label detected
-      prefixLength = readUnaryLength(slice);
-      for (int i = 0; i < prefixLength; i++) {
-        pp.append(slice.loadBit() ? '1' : '0');
-      }
-    } else {
-      int lb1 = slice.loadBit() ? 1 : 0;
-      if (lb1 == 0) {
-        // Long label detected
-        prefixLength = slice.loadUint((int) Math.ceil(Math.log(n + 1) / Math.log(2))).intValue();
-        for (int i = 0; i < prefixLength; i++) {
-          pp.append(slice.loadBit() ? '1' : '0');
-        }
-      } else {
-        // Same label detected
-        char bit = slice.loadBit() ? '1' : '0';
-        prefixLength = slice.loadUint((int) (Math.ceil(Math.log(n + 1) / Math.log(2)))).intValue();
-        for (int i = 0; i < prefixLength; i++) {
-          pp.append(bit);
-        }
-      }
-    }
-
-    if (n - prefixLength == 0) {
-      return originalCell;
-    } else {
-      CellSlice sl = CellSlice.beginParse(originalCell);
-      Cell left = sl.loadRef();
-      Cell right = sl.loadRef();
-      // NOTE: Left and right branches implicitly contain prefixes '0' and '1'
-
-      if (left.getCellType() == CellType.ORDINARY) {
-        left =
-            (pp.toString() + '0').equals(key.substring(0, pp.length() + 1))
-                ? generateMerkleProof(
-                    pp.toString() + '0', CellSlice.beginParse(left), n - prefixLength - 1, key)
-                : convertToPrunedBranch(left);
-      }
-
-      if (right.getCellType() == CellType.ORDINARY) {
-        right =
-            (pp.toString() + '1').equals(key.substring(0, pp.length() + 1))
-                ? generateMerkleProof(
-                    pp.toString() + '1', CellSlice.beginParse(right), n - prefixLength - 1, key)
-                : convertToPrunedBranch(right);
-      }
-
-      return CellBuilder.beginCell().storeSlice(sl).storeRef(left).storeRef(right).endCell();
-    }
   }
 
   private Cell endExoticCell(CellBuilder builder, CellType type) {

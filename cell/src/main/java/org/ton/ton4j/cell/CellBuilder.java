@@ -32,6 +32,11 @@ public class CellBuilder {
     return new CellBuilder(bitSize);
   }
 
+  public Cell endCellNoRecalculation() {
+
+    return cell;
+  }
+
   /** Converts a builder into an ordinary cell. */
   public Cell endCell() {
     cell.levelMask = cell.resolveMask();
@@ -356,6 +361,11 @@ public class CellBuilder {
     return this;
   }
 
+  public CellBuilder storeHashes(byte[] hashes) {
+    cell.setHashes(hashes);
+    return this;
+  }
+
   public CellBuilder storeRefs(Cell... cells) {
     checkRefsOverflow(cells.length);
     for (Cell c : cells) {
@@ -372,6 +382,21 @@ public class CellBuilder {
     for (Cell c : cellSlice.refs) {
       cell.refs.add(c.clone());
     }
+    return this;
+  }
+
+  /**
+   * stores slice that do not have refs, only their hashes.
+   *
+   * @param bitString
+   * @param hashes
+   * @return
+   */
+  public CellBuilder storeSliceLazy(BitString bitString, byte[] hashes) {
+
+    storeBitString(bitString);
+    storeHashes(hashes);
+
     return this;
   }
 

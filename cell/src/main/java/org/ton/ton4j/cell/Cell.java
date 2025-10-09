@@ -95,6 +95,19 @@ public class Cell implements Serializable {
     this.depthLevels = new int[0];
   }
 
+  public Cell(BitString bits, byte[] hashes) {
+    this.bits = new BitString(bits.getUsedBits());
+    this.bits.writeBitString(bits.clone());
+    this.refs = Collections.emptyList();
+    this.exotic = false;
+    this.type = ORDINARY;
+    this.levelMask = new LevelMask(0);
+
+    this.hashes = hashes;
+    // Initialize hashes and depthLevels as empty arrays
+    this.depthLevels = new int[0];
+  }
+
   public Cell(BitString bits, List<Cell> refs, int cellType) {
     this.bits = new BitString(bits.getUsedBits());
     this.bits.writeBitString(bits.clone());
@@ -272,6 +285,10 @@ public class Cell implements Serializable {
 
   void setExotic(boolean pExotic) {
     exotic = pExotic;
+  }
+
+  void setHashes(byte[] pHashes) {
+    hashes = pHashes;
   }
 
   void setLevelMask(LevelMask pLevelMask) {

@@ -1,27 +1,36 @@
-package org.ton.ton4j.cell;
+package org.ton.ton4j.exporter.lazy;
 
 import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
+import static org.ton.ton4j.exporter.reader.CellDbReader.parseCell;
 
+import java.io.IOException;
 import java.io.Serializable;
 import java.math.BigInteger;
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.function.Function;
 import org.ton.ton4j.address.Address;
 import org.ton.ton4j.bitstring.BitString;
+import org.ton.ton4j.cell.*;
+import org.ton.ton4j.exporter.reader.CellDbReader;
+import org.ton.ton4j.utils.Utils;
 
-public class CellSlice implements Serializable {
+public class CellSliceLazy implements Serializable {
 
   BitString bits;
   List<Cell> refs;
   byte[] hashes;
   public CellType type;
+  CellDbReader cellDbReader;
 
-  public CellSlice() {}
+  private CellSliceLazy() {}
 
-  private CellSlice(BitString bits, List<Cell> refs) {
+  private CellSliceLazy(BitString bits, List<Cell> refs) {
     this.bits = bits.clone();
     // Use more efficient list initialization for better performance
     if (refs.isEmpty()) {
@@ -33,7 +42,11 @@ public class CellSlice implements Serializable {
     }
   }
 
-  private CellSlice(BitString bits, List<Cell> refs, CellType cellType) {
+  //  CellSlice toCellSlice() {
+  //    return new CellSlice(bits, new ArrayList<>(), type, hashes);
+  //  }
+
+  private CellSliceLazy(BitString bits, List<Cell> refs, CellType cellType) {
     this.bits = bits.clone();
     // Use more efficient list initialization for better performance
     if (refs.isEmpty()) {
@@ -46,7 +59,27 @@ public class CellSlice implements Serializable {
     this.type = cellType;
   }
 
-  public CellSlice(BitString bits, List<Cell> refs, CellType cellType, byte[] hashes) {
+  private CellSliceLazy(BitString bits, List<Cell> refs, CellType cellType, byte[] hashes) {
+    this.bits = bits.clone();
+    // Use more efficient list initialization for better performance
+    if (refs.isEmpty()) {
+      this.refs = new ArrayList<>(0);
+    } else if (refs.size() <= 4) { // TON cells have max 4 refs
+      this.refs = new ArrayList<>(refs);
+    } else {
+      this.refs = new ArrayList<>(refs);
+    }
+    this.type = cellType;
+    this.hashes = hashes;
+  }
+
+  private CellSliceLazy(
+      CellDbReader cellDbReader,
+      BitString bits,
+      List<Cell> refs,
+      CellType cellType,
+      byte[] hashes) {
+    this.cellDbReader = cellDbReader;
     this.bits = bits.clone();
     // Use more efficient list initialization for better performance
     if (refs.isEmpty()) {
@@ -64,39 +97,40 @@ public class CellSlice implements Serializable {
     return this.type != CellType.ORDINARY;
   }
 
-  public static CellSlice beginParse(Cell cell, byte[] hashes) {
+  public static CellSliceLazy beginParse(Cell cell, byte[] hashes) {
     if (isNull(cell)) {
       throw new IllegalArgumentException("cell is null");
     }
-    return new CellSlice(cell.getBits(), cell.refs, cell.getCellType(), hashes);
+    return new CellSliceLazy(cell.getBits(), cell.getRefs(), cell.getCellType(), hashes);
   }
 
-  public static CellSlice beginParse(Cell cell) {
+  public static CellSliceLazy beginParse(CellDbReader cellDbReader, Cell cell) {
     if (isNull(cell)) {
       throw new IllegalArgumentException("cell is null");
     }
-    return new CellSlice(cell.getBits(), cell.refs, cell.getCellType());
+    return new CellSliceLazy(
+        cellDbReader, cell.getBits(), cell.getRefs(), cell.getCellType(), cell.getHashes());
   }
 
-  public static CellSlice beginParse(Object cell) {
-    if (!((cell instanceof Cell) || (cell instanceof CellSlice))) {
-      throw new Error("CellSlice works only with Cell types");
-    }
-    if ((cell instanceof Cell)) {
-      return beginParse((Cell) cell);
-    }
-    return (CellSlice) cell;
-  }
+  //  public static CellSliceLazy beginParse(Object cell) {
+  //    if (!((cell instanceof Cell) || (cell instanceof CellSliceLazy))) {
+  //      throw new Error("CellSlice works only with Cell types");
+  //    }
+  //    if ((cell instanceof Cell)) {
+  //      return beginParse((Cell) cell);
+  //    }
+  //    return (CellSliceLazy) cell;
+  //  }
 
-  public static CellSlice of(Object cell) {
-    if (!((cell instanceof Cell) || (cell instanceof CellSlice))) {
-      throw new Error("CellSlice accepts only Cell or CellSlice types");
-    }
-    if ((cell instanceof Cell)) {
-      return beginParse((Cell) cell);
-    }
-    return (CellSlice) cell;
-  }
+  //  public static CellSliceLazy of(Object cell) {
+  //    if (!((cell instanceof Cell) || (cell instanceof CellSliceLazy))) {
+  //      throw new Error("CellSlice accepts only Cell or CellSlice types");
+  //    }
+  //    if ((cell instanceof Cell)) {
+  //      return beginParse((Cell) cell);
+  //    }
+  //    return (CellSliceLazy) cell;
+  //  }
 
   /**
    * Create an optimized clone of this CellSlice This is a performance-critical method used in many
@@ -104,9 +138,9 @@ public class CellSlice implements Serializable {
    *
    * @return A new CellSlice with the same content
    */
-  public CellSlice clone() {
+  public CellSliceLazy clone() {
     // Create a new CellSlice with the same properties
-    CellSlice result = new CellSlice();
+    CellSliceLazy result = new CellSliceLazy();
     result.bits = this.bits.clone();
 
     // Optimize refs copying based on size
@@ -123,7 +157,7 @@ public class CellSlice implements Serializable {
   }
 
   public Cell sliceToCell() {
-    return new Cell(bits, refs);
+    return new Cell(bits, hashes);
   }
 
   public void endParse() {
@@ -178,7 +212,7 @@ public class CellSlice implements Serializable {
     return refs.size();
   }
 
-  public CellSlice skipRefs(int length) {
+  public CellSliceLazy skipRefs(int length) {
     if (length > 0) {
       refs.subList(0, length).clear();
     }
@@ -207,12 +241,12 @@ public class CellSlice implements Serializable {
     return result;
   }
 
-  public TonHashMap loadDict(
+  public TonHashMapLazy loadDict(
       int n, Function<BitString, Object> keyParser, Function<Cell, Object> valueParser) {
-    TonHashMap x = new TonHashMap(n);
+    TonHashMapLazy x = new TonHashMapLazy(n);
     if (this.type == CellType.PRUNED_BRANCH) {
       //      System.out.println("TonHashMap: pruned branch in cell");
-      return new TonHashMap(n);
+      return new TonHashMapLazy(n);
     }
 
     x.deserialize(this, keyParser, valueParser);
@@ -223,15 +257,15 @@ public class CellSlice implements Serializable {
   }
 
   /** Returns only value and extra of all edges, without extras of fork-nodes. */
-  public TonHashMapAug loadDictAug(
+  public TonHashMapAugLazy loadDictAug(
       int n,
       Function<BitString, Object> keyParser,
-      Function<CellSlice, Object> valueParser,
-      Function<CellSlice, Object> extraParser) {
-    TonHashMapAug x = new TonHashMapAug(n);
+      Function<CellSliceLazy, Object> valueParser,
+      Function<CellSliceLazy, Object> extraParser) {
+    TonHashMapAugLazy x = new TonHashMapAugLazy(n);
     if (this.type == CellType.PRUNED_BRANCH) {
       //      System.out.println("TonHashMap: pruned branch in cell");
-      return new TonHashMapAug(n);
+      return new TonHashMapAugLazy(n);
     }
     x.deserialize(this, keyParser, valueParser, extraParser);
     //    if (x.elements.isEmpty()) {
@@ -240,47 +274,58 @@ public class CellSlice implements Serializable {
     return x;
   }
 
-  public TonHashMapE loadDictE(
+  public TonHashMapELazy loadDictE(
       int n, Function<BitString, Object> keyParser, Function<Cell, Object> valueParser) {
     boolean isEmpty = !this.loadBit();
     if (isEmpty) {
-      return new TonHashMapE(n);
+      return new TonHashMapELazy(n);
     } else if (this.type == CellType.PRUNED_BRANCH) {
-      return new TonHashMapE(n);
+      return new TonHashMapELazy(n);
     } else {
-      TonHashMapE hashMap = new TonHashMapE(n);
-      if (this.getRefsCount() > 0) {
-        hashMap.deserialize(CellSlice.beginParse(this.loadRef()), keyParser, valueParser);
+      TonHashMapELazy hashMap = new TonHashMapELazy(n);
+      if (hashes.length / 32 > 0) {
+        byte[] hash = Utils.slice(hashes, 0, 32);
+        hashes = Arrays.copyOfRange(hashes, 32, hashes.length); // remove hash
+
+        Cell refCell = getRefByHash(hash);
+
+        hashMap.deserialize(
+            CellSliceLazy.beginParse(cellDbReader, refCell), keyParser, valueParser);
       }
       return hashMap;
     }
   }
 
   /** Returns only value and extra of all edges, without extras of fork-nodes. */
-  public TonHashMapAugE loadDictAugE(
+  public TonHashMapAugELazy loadDictAugE(
       int n,
       Function<BitString, Object> keyParser,
-      Function<CellSlice, Object> valueParser,
-      Function<CellSlice, Object> extraParser) {
+      Function<CellSliceLazy, Object> valueParser,
+      Function<CellSliceLazy, Object> extraParser) {
     if (this.isExotic()) {
-      return new TonHashMapAugE(n);
+      return new TonHashMapAugELazy(n);
     }
     boolean isEmpty = !this.loadBit();
     if (isEmpty) {
-      return new TonHashMapAugE(n);
+      return new TonHashMapAugELazy(n);
     } else {
-      TonHashMapAugE hashMap = new TonHashMapAugE(n);
-      if (this.getRefsCount() > 0) {
+      TonHashMapAugELazy hashMap = new TonHashMapAugELazy(n);
+      if (hashes.length / 32 > 0) {
+        byte[] hash = Utils.slice(hashes, 0, 32);
+        hashes = Arrays.copyOfRange(hashes, 32, hashes.length); // remove hash
+
+        Cell refCell = getRefByHash(hash);
+
         hashMap.deserialize(
-            CellSlice.beginParse(this.loadRef()), keyParser, valueParser, extraParser);
+            CellSliceLazy.beginParse(cellDbReader, refCell), keyParser, valueParser, extraParser);
       }
       return hashMap;
     }
   }
 
-  public TonPfxHashMap loadDictPfx(
+  public TonPfxHashMapLazy loadDictPfx(
       int n, Function<BitString, Object> keyParser, Function<Cell, Object> valueParser) {
-    TonPfxHashMap x = new TonPfxHashMap(n);
+    TonPfxHashMapLazy x = new TonPfxHashMapLazy(n);
     x.deserialize(this, keyParser, valueParser);
     if (x.elements.isEmpty()) {
       throw new Error("TonPfxHashMap can't be empty");
@@ -288,19 +333,23 @@ public class CellSlice implements Serializable {
     return x;
   }
 
-  public TonPfxHashMapE loadDictPfxE(
+  public TonPfxHashMapELazy loadDictPfxE(
       int n, Function<BitString, Object> keyParser, Function<Cell, Object> valueParser) {
 
     if (this.isExotic()) {
-      return new TonPfxHashMapE(n);
+      return new TonPfxHashMapELazy(n);
     }
 
     boolean isEmpty = !this.loadBit();
     if (isEmpty) {
-      return new TonPfxHashMapE(n);
+      return new TonPfxHashMapELazy(n);
     } else {
-      TonPfxHashMapE hashMap = new TonPfxHashMapE(n);
-      hashMap.deserialize(CellSlice.beginParse(this.loadRef()), keyParser, valueParser);
+      TonPfxHashMapELazy hashMap = new TonPfxHashMapELazy(n);
+      byte[] hash = Utils.slice(hashes, 0, 32);
+      hashes = Arrays.copyOfRange(hashes, 32, hashes.length); // remove hash
+      Cell refCell = getRefByHash(hash);
+
+      hashMap.deserialize(CellSliceLazy.beginParse(cellDbReader, refCell), keyParser, valueParser);
       return hashMap;
     }
   }
@@ -313,9 +362,9 @@ public class CellSlice implements Serializable {
    * @param valueParser - value deserializor
    * @return TonHashMap - dict
    */
-  public TonHashMap preloadDict(
+  public TonHashMapLazy preloadDict(
       int n, Function<BitString, Object> keyParser, Function<Cell, Object> valueParser) {
-    TonHashMap x = new TonHashMap(n);
+    TonHashMapLazy x = new TonHashMapLazy(n);
     x.deserialize(this.clone(), keyParser, valueParser);
     if (x.elements.isEmpty()) {
       throw new Error("TonHashMap can't be empty");
@@ -331,26 +380,30 @@ public class CellSlice implements Serializable {
    * @param valueParser - value deserializor
    * @return TonHashMap - dict
    */
-  public TonHashMap preloadDictE(
+  public TonHashMapLazy preloadDictE(
       int n, Function<BitString, Object> keyParser, Function<Cell, Object> valueParser) {
     boolean isEmpty = !this.preloadBit();
     if (isEmpty) {
-      return new TonHashMap(n);
+      return new TonHashMapLazy(n);
     } else {
-      TonHashMap x = new TonHashMap(n);
-      CellSlice cs = this.clone();
+      TonHashMapLazy x = new TonHashMapLazy(n);
+      CellSliceLazy cs = this.clone();
       cs.skipBit();
-      x.deserialize(CellSlice.beginParse(cs.loadRef()), keyParser, valueParser);
+      byte[] hash = Utils.slice(hashes, 0, 32);
+      hashes = Arrays.copyOfRange(hashes, 32, hashes.length); // remove hash
+      Cell refCell = getRefByHash(hash);
+
+      x.deserialize(CellSliceLazy.beginParse(cellDbReader, refCell), keyParser, valueParser);
       return x;
     }
   }
 
-  public CellSlice skipDictE() {
+  public CellSliceLazy skipDictE() {
     boolean isEmpty = loadBit();
     return isEmpty ? skipRefs(1) : this;
   }
 
-  public CellSlice skipDict(int dictKeySize) {
+  public CellSliceLazy skipDict(int dictKeySize) {
     loadDict(
         dictKeySize,
         k -> CellBuilder.beginCell().endCell(),
@@ -390,14 +443,14 @@ public class CellSlice implements Serializable {
     return bits.getUsedBits();
   }
 
-  public CellSlice skipBits(int length) {
+  public CellSliceLazy skipBits(int length) {
     checkBitsOverflow(length);
     // Skip bits in one operation instead of a loop
     bits.readCursor += length;
     return this;
   }
 
-  public CellSlice skipBit() {
+  public CellSliceLazy skipBit() {
     checkBitsOverflow(1);
     bits.readBit();
     return this;
@@ -491,7 +544,7 @@ public class CellSlice implements Serializable {
     // Estimate initial capacity to reduce StringBuilder reallocations
     int estimatedCapacity = Math.max(256, bits.getUsedBits() / 8 * 2);
     StringBuilder s = new StringBuilder(estimatedCapacity);
-    CellSlice ref = this.clone();
+    CellSliceLazy ref = this.clone();
 
     while (nonNull(ref)) {
       try {
@@ -509,7 +562,10 @@ public class CellSlice implements Serializable {
         }
 
         if (ref.refs.size() == 1) {
-          ref = CellSlice.beginParse(ref.loadRef());
+          byte[] hash = Utils.slice(hashes, 0, 32);
+          hashes = Arrays.copyOfRange(hashes, 32, hashes.length); // remove hash
+          Cell value = getRefByHash(hash);
+          ref = CellSliceLazy.beginParse(cellDbReader, value);
           continue;
         }
       } catch (Throwable e) {
@@ -705,5 +761,18 @@ public class CellSlice implements Serializable {
 
   public byte[] getHashes() {
     return hashes;
+  }
+
+  public Cell getRefByHash(byte[] hash) {
+    try {
+      byte[] value = cellDbReader.getCellDb().get(hash);
+      //      System.out.println("looking for hash " + Utils.bytesToHex(hash));
+      if (value == null) {
+        throw new RuntimeException("Cannot find cell with hash " + Utils.bytesToHex(hash));
+      }
+      return parseCell(ByteBuffer.wrap(value).order(ByteOrder.LITTLE_ENDIAN));
+    } catch (IOException e) {
+      throw new RuntimeException(e);
+    }
   }
 }

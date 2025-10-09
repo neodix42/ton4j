@@ -1,19 +1,18 @@
-package org.ton.ton4j.tlb;
+package org.ton.ton4j.exporter.lazy;
 
 import java.io.Serializable;
 import org.ton.ton4j.cell.Cell;
-import org.ton.ton4j.cell.CellSlice;
 
-public interface StorageExtraInfo extends Serializable {
+public interface StorageExtraInfoLazy extends Serializable {
 
   Cell toCell();
 
-  static StorageExtraInfo deserialize(CellSlice cs) {
+  static StorageExtraInfoLazy deserialize(CellSliceLazy cs) {
     int magic = cs.preloadUint(3).intValue();
     if (magic == 0b000) {
-      return StorageExtraNone.deserialize(cs);
+      return StorageExtraNoneLazy.deserialize(cs);
     } else if (magic == 0b001) {
-      return StorageExtraInformation.deserialize(cs);
+      return StorageExtraInformationLazy.deserialize(cs);
 
     } else {
       throw new Error("Wrong magic in StorageExtraInfo, found  " + magic + ", required 0 or 1.");

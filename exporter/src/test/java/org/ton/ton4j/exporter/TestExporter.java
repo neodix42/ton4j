@@ -15,8 +15,10 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
+import org.ton.ton4j.address.Address;
 import org.ton.ton4j.bitstring.BitString;
 import org.ton.ton4j.cell.*;
+import org.ton.ton4j.exporter.lazy.ShardAccountLazy;
 import org.ton.ton4j.exporter.types.*;
 import org.ton.ton4j.tlb.Block;
 import org.ton.ton4j.tlb.BlockId;
@@ -44,6 +46,32 @@ public class TestExporter {
           .disableHtmlEscaping()
           .setLenient()
           .create();
+
+  org.ton.ton4j.tl.types.db.block.BlockIdExt blockIdExtMc =
+      org.ton.ton4j.tl.types.db.block.BlockIdExt.builder()
+          .workchain(-1)
+          .seqno(229441)
+          .shard(0x8000000000000000L)
+          .rootHash(
+              Utils.hexToSignedBytes(
+                  "439233F8D4B99BAD7A2CC84FFE0D16150ADC0E1058BCDF82243D1445A75CA5BF"))
+          .fileHash(
+              Utils.hexToSignedBytes(
+                  "E24EA0E5F520135DA4FC0B0477E5440E0D1C4E7EDB2026941F0457376BB3D97E"))
+          .build();
+
+  org.ton.ton4j.tl.types.db.block.BlockIdExt blockIdExt =
+      org.ton.ton4j.tl.types.db.block.BlockIdExt.builder()
+          .workchain(0)
+          .seqno(229441)
+          .shard(0x8000000000000000L)
+          .rootHash(
+              Utils.hexToSignedBytes(
+                  "5F49521AD8EC570C82B6DA6D1AF9D16884CA17F3310044BBB66ED6B94A15608C"))
+          .fileHash(
+              Utils.hexToSignedBytes(
+                  "7925B49AF1FF46550998947C05EC2B2AAD2F89B1C4FA98F3A19DDB62ACDF36EC"))
+          .build();
 
   @Test
   public void testExporterBuilder() {
@@ -491,5 +519,39 @@ public class TestExporter {
         "seqno {}, wc {}",
         block.getBlockInfo().getSeqno(),
         block.getBlockInfo().getShard().getWorkchain());
+  }
+
+  @Test
+  public void testCellDbReaderGetAccountBalance() throws IOException {
+    Exporter exporter = Exporter.builder().tonDatabaseRootPath(TON_DB_ROOT_PATH).build();
+    //    org.ton.ton4j.tl.types.db.block.BlockIdExt blockIdExt = exporter.getLastBlockIdExt();
+
+    log.info("blockIdExt {}", blockIdExt);
+    ShardAccountLazy shardAccount =
+        exporter.getShardAccountByAddress(
+            blockIdExt,
+            // Address.of("-1:3333333333333333333333333333333333333333333333333333333333333333"));
+            // Address.of("-1:ac76977d75e874006e37bf1113ff0b111851b1b72217b7e281424d2389be0122"));
+            Address.of("0:B3DD5C861F4B3FF36DA1996E31EF8394A83D0A5D08CFA472ADC2EB804E5E849A"));
+    // Address.of("-1:22f53b7d9aba2cef44755f7078b01614cd4dde2388a1729c2c386cf8f9898afe"));
+    log.info("shardAccount.balance {}", Utils.formatNanoValue(shardAccount.getBalance()));
+  }
+
+  @Test
+  public void testCellDbReaderGetAccountBalanceMc() throws IOException {
+    Exporter exporter = Exporter.builder().tonDatabaseRootPath(TON_DB_ROOT_PATH).build();
+    org.ton.ton4j.tl.types.db.block.BlockIdExt blockIdExt = exporter.getLastBlockIdExt();
+
+    // blockIdExtMc - 28,385.246832021
+    // blockIdExt - 26,264.412991196 last
+    log.info("blockIdExt {}", blockIdExtMc);
+    ShardAccountLazy shardAccount =
+        exporter.getShardAccountByAddress(
+            blockIdExtMc,
+            // Address.of("-1:0000000000000000000000000000000000000000000000000000000000000000"));
+            Address.of("-1:3333333333333333333333333333333333333333333333333333333333333333"));
+
+    // Address.of("-1:22f53b7d9aba2cef44755f7078b01614cd4dde2388a1729c2c386cf8f9898afe"));
+    log.info("shardAccount.balance {}", Utils.formatNanoValue(shardAccount.getBalance()));
   }
 }

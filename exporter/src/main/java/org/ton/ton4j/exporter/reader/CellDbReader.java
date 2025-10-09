@@ -3,7 +3,6 @@ package org.ton.ton4j.exporter.reader;
 import java.io.Closeable;
 import java.io.IOException;
 import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -67,65 +66,7 @@ public class CellDbReader implements Closeable {
     }
   }
 
-  /** specifically to read/parse celldb values that contain cell data */
-  public static Cell parseCell(RocksDbWrapper cellDb, ByteBuffer data, Set<String> visited)
-      throws IOException {
-
-    int flag = data.getInt();
-    boolean storedBoc = false;
-    if (flag == -1) {
-      storedBoc = true;
-      flag = data.getInt();
-    }
-
-    if (storedBoc) {
-      byte[] remaining = new byte[data.remaining()];
-      data.get(remaining);
-      return Cell.fromBoc(remaining); // remaining buffer
-    } else {
-      int d1 = data.get() & 0xFF;
-      int d2 = data.get() & 0xFF;
-
-      CellSerializationInfo cellSerializationInfo = CellSerializationInfo.create(d1, d2);
-
-      byte[] payload = new byte[cellSerializationInfo.getDataLength()];
-      data.get(payload);
-
-      List<Cell> refCells = new ArrayList<>();
-
-      if (cellSerializationInfo.getRefsCount() != 0) {
-
-        data.position(cellSerializationInfo.getRefsOffset());
-
-        for (int i = 0; i < cellSerializationInfo.getRefsCount(); i++) {
-          int lMask = data.get() & 0xFF;
-          //          LevelMask levelMask = cellSerializationInfo.getLevelMask();
-          LevelMask levelMask = new LevelMask(lMask);
-          int hashesCount = levelMask.getHashesCount();
-
-          int endOffset = 1 + hashesCount * (32 + 2);
-          byte[] hashes = new byte[hashesCount * 32];
-          data.get(hashes);
-          byte[] depths = new byte[hashesCount * 2];
-          data.get(depths);
-          byte[] primaryHash = Arrays.copyOfRange(hashes, 0, 32);
-          byte[] value = cellDb.get(primaryHash);
-          log.info("value: {}", Utils.bytesToHex(value));
-        }
-      }
-
-      return CellBuilder.beginCell()
-          .storeBitString(new BitString(payload, cellSerializationInfo.getDataLength() * 8))
-          .storeRefs(refCells)
-          .setExotic(cellSerializationInfo.isSpecial())
-          .setLevelMask(cellSerializationInfo.getLevelMask())
-          .endCell();
-    }
-  }
-
-  public static Cell parseCell(
-      RocksDbWrapper cellDb, ByteBuffer data, Set<String> visited, Map<String, Cell> cache)
-      throws IOException {
+  public static Cell parseCell(ByteBuffer data) throws IOException {
 
     int flag = data.getInt();
     boolean storedBoc = false;
@@ -150,8 +91,7 @@ public class CellDbReader implements Closeable {
       byte[] payload = new byte[cellSerializationInfo.getDataLength()];
       data.get(payload);
 
-      // Collect reference hashes (like C++ does)
-      List<String> refHashes = new ArrayList<>();
+      byte[] allHashes = new byte[0];
 
       if (cellSerializationInfo.getRefsCount() != 0) {
         data.position(cellSerializationInfo.getRefsOffset());
@@ -171,50 +111,16 @@ public class CellDbReader implements Closeable {
 
           // Use PRIMARY hash (first hash) - this is the reference
           byte[] primaryHash = Arrays.copyOfRange(hashes, 0, 32);
-          String hashHex = Utils.bytesToHex(primaryHash);
-          refHashes.add(hashHex);
+          allHashes = Utils.concatBytes(allHashes, primaryHash);
         }
-      }
-
-      // Now resolve references from cache (they should already be deserialized)
-      // This matches C++ pattern where refs point to already-deserialized cells
-      List<Cell> refCells = new ArrayList<>();
-      for (String refHash : refHashes) {
-        Cell refCell = cache.get(refHash);
-        if (refCell == null) {
-          // Reference not in cache - need to deserialize it first
-          // This should not happen if we process cells in correct order
-          //          log.warn("Reference {} not found in cache, attempting to load", refHash);
-
-          byte[] refData = cellDb.get(Utils.hexToSignedBytes(refHash));
-          if (refData != null && !visited.contains(refHash)) {
-            visited.add(refHash);
-            refCell =
-                parseCell(
-                    cellDb,
-                    ByteBuffer.wrap(refData).order(ByteOrder.LITTLE_ENDIAN),
-                    visited,
-                    cache);
-            if (refCell != null) {
-              cache.put(refHash, refCell);
-            }
-          }
-
-          if (refCell == null) {
-            // Create placeholder to avoid null references
-            log.warn("Creating placeholder for missing reference {}", refHash);
-            refCell = CellBuilder.beginCell().endCell();
-          }
-        }
-        refCells.add(refCell);
       }
 
       return CellBuilder.beginCell()
           .storeBitString(new BitString(payload, cellSerializationInfo.getDataLength() * 8))
-          .storeRefs(refCells)
+          .storeHashes(allHashes)
           .setExotic(cellSerializationInfo.isSpecial())
           .setLevelMask(cellSerializationInfo.getLevelMask())
-          .endCell();
+          .endCellNoRecalculation();
     }
   }
 
