@@ -31,6 +31,10 @@ public class ShardAccountsLazy {
   }
 
   public static ShardAccountsLazy deserialize(CellSliceLazy cs) {
+    //    byte[] shardAccountsKeyHash = Utils.slice(cs.getHashes(), 0, 32);
+    //    Cell shardAccountsCell = cs.getRefByHash(shardAccountsKeyHash);
+    //    CellSliceLazy cs1 = CellSliceLazy.beginParse(cs.cellDbReader, shardAccountsCell);
+
     // Don't deserialize the entire hashmap - just store the root
     return ShardAccountsLazy.builder().rootSlice(cs).cellDbReader(cs.cellDbReader).build();
   }
@@ -50,44 +54,98 @@ public class ShardAccountsLazy {
       return null;
     }
 
-    BigInteger key = address.toBigInteger();
-    BitString keyBits = new BitString(256);
-    keyBits.writeUint(key, 256);
+    // HashmapAugE structure: first bit indicates if empty (0) or non-empty (1)
+    // ahme_empty$0 {n:#} {X:Type} {Y:Type} extra:Y = HashmapAugE n X Y;
+    // ahme_root$1 {n:#} {X:Type} {Y:Type} root:^(HashmapAug n X Y) extra:Y = HashmapAugE n X Y;
+    //    CellSliceLazy wrapper = rootSlice.clone();
+    boolean nonEmpty = rootSlice.loadBit();
 
-    // Traverse the Patricia tree to find the account
-    CellSliceLazy current = rootSlice.clone();
+    if (!nonEmpty) {
+      // Empty hashmap
+      return null;
+    }
+
+    // Load the actual root cell from the reference
+    //    int wrapperRefsCount = rootSlice.getRefsCountLazy();
+    if (rootSlice.getRefsCountLazy() < 1) {
+      log.error("HashmapAugE marked as non-empty but has no root reference");
+      return null;
+    }
+
+    // find by hash and load non-empty dictAugE
+    byte[] rootHash = Utils.slice(rootSlice.hashes, 0, 32);
+    Cell rootCell = rootSlice.getRefByHash(rootHash);
+
+    int keyLength = 256;
+    BigInteger key = address.toBigInteger();
+    BitString keyBits = new BitString(keyLength);
+    keyBits.writeUint(key, keyLength);
+    // Reset read position to start
+    keyBits.readCursor = 0;
+
+    // Traverse the Patricia tree to find the account, starting from the actual root
+    CellSliceLazy current = CellSliceLazy.beginParse(cellDbReader, rootCell);
     int keyPos = 0;
 
-    while (keyPos < 256) {
-      log.info("key pos {}", keyPos);
-      if (keyPos == 17) {
-        log.info("breakpoint");
+    while (true) {
+      log.info("keypos: {}", keyPos);
+      if (keyPos == 16) {
+        log.debug("debug");
       }
+      // https://github.com/ton-blockchain/ton/blob/5a1d271b9b0dd2bbffea555561cdc385ed2672a6/crypto/vm/dict.cpp#L458
       // Read the label
-      BitString label = deserializeLabel(current, 256 - keyPos);
+      BitString label = deserializeLabel(current, keyLength);
 
-      // Check if label matches our key
+      // Check if label is a prefix of the remaining key (like C++ is_prefix_of)
+      // Reset label read cursor to compare from start
+      label.readCursor = 0;
+      boolean labelMatches = true;
       for (int i = 0; i < label.getUsedBits(); i++) {
+        if (i == 100) {
+          log.info("debug 2");
+        }
         if (keyBits.readBit() != label.readBit()) {
-          // Key not found
+          // Key not found - label doesn't match as prefix
+          labelMatches = false;
           break;
         }
         keyPos++;
       }
 
-      if (keyPos == 256) {
-        // Found the account - current slice contains the value
+      keyLength -= label.getUsedBits(); // or // left bits
+
+      //      if (!labelMatches) {
+      //        log.info("Label mismatch at keyPos {}", keyPos);
+      //        return null;
+      //      }
+
+      int remainingAfterLabel = keyLength - keyPos;
+      log.info(
+          "Label matched, label length: {}, keyPos now: {}, remaining: {}",
+          label.getUsedBits(),
+          keyPos,
+          remainingAfterLabel);
+
+      // After consuming the label, check if we've reached the end (leaf node)
+      // In Patricia tree/HashmapAug, if no bits remain after the label, we're at a leaf
+      if (remainingAfterLabel == 0) {
+        // Found the account - current slice contains: extra:Y value:X
+        // We need to skip the extra (DepthBalanceInfo) to get to the value (ShardAccount)
+        // DepthBalanceInfo is: depth_balance$_ split_depth:(#<= 30) balance:CurrencyCollection
+        // Skip split_depth (5 bits for #<= 30)
+        current.loadUint(5);
+        // Skip balance (CurrencyCollection = Grams + ExtraCurrencyCollection)
+        skipCurrencyCollection(current);
+        // Now current points to the ShardAccount value
         return ShardAccountLazy.deserialize(current);
       }
 
       // Not at leaf yet - need to follow a reference
       // Get the refs count from the cell
-      //      Cell edgeCell = current.sliceToCell();
       int refsCount = current.getRefsCountLazy();
 
       if (refsCount == 0) {
-        // No more refs - account not found
-        log.info("refsCount 0, account not found");
+        log.error("Fork nodes must have exactly 2 references, found {}", refsCount);
         return null;
       }
 
@@ -97,10 +155,6 @@ public class ShardAccountsLazy {
 
       // Calculate which reference to follow
       int refIndex = goRight ? 1 : 0;
-      if (refIndex >= refsCount) {
-        // Reference doesn't exist
-        return null;
-      }
 
       // Load the reference cell
       int hashesPerRef = current.hashes.length / 32 / refsCount;
@@ -108,8 +162,6 @@ public class ShardAccountsLazy {
       Cell refCell = current.getRefByHash(hash);
       current = CellSliceLazy.beginParse(cellDbReader, refCell);
     }
-
-    return null;
   }
 
   private BitString deserializeLabel(CellSliceLazy edge, int m) {
@@ -167,7 +219,6 @@ public class ShardAccountsLazy {
       return new BitString(0);
     }
     boolean v = edge.loadBit();
-    //    int lenBits = 32 - Integer.numberOfLeadingZeros(m);
     int lenBits = m == 0 ? 0 : 32 - Integer.numberOfLeadingZeros(m);
 
     // Check if we have enough bits to read the length field
@@ -184,5 +235,28 @@ public class ShardAccountsLazy {
       r.writeBit(v);
     }
     return r;
+  }
+
+  /**
+   * Skip CurrencyCollection = Grams + ExtraCurrencyCollection Grams = VarUInteger 16
+   * ExtraCurrencyCollection = HashmapE 32 (VarUInteger 32)
+   */
+  private void skipCurrencyCollection(CellSliceLazy cs) {
+    // Skip Grams (VarUInteger 16)
+    skipVarUInteger(cs, 16);
+    // Skip ExtraCurrencyCollection (HashmapE 32 ...)
+    // HashmapE starts with a bit: 0 = empty, 1 = has root
+    boolean hasExtra = cs.loadBit();
+    if (hasExtra) {
+      // Has extra currencies - skip the reference
+      cs.loadRef();
+    }
+  }
+
+  /** Skip VarUInteger n var_uint$_ {n:#} len:(#< n) value:(uint (len * 8)) */
+  private void skipVarUInteger(CellSliceLazy cs, int n) {
+    int lenBits = 32 - Integer.numberOfLeadingZeros(n - 1);
+    int len = cs.loadUint(lenBits).intValue();
+    cs.skipBits(len * 8);
   }
 }
