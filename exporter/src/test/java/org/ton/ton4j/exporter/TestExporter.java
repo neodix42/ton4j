@@ -532,7 +532,8 @@ public class TestExporter {
             blockIdExt,
             // Address.of("-1:3333333333333333333333333333333333333333333333333333333333333333"));
             // Address.of("-1:ac76977d75e874006e37bf1113ff0b111851b1b72217b7e281424d2389be0122"));
-            Address.of("0:B3DD5C861F4B3FF36DA1996E31EF8394A83D0A5D08CFA472ADC2EB804E5E849A"));
+            Address.of(
+                "0:B3DD5C861F4B3FF36DA1996E31EF8394A83D0A5D08CFA472ADC2EB804E5E849A")); // 0.006007998
     // Address.of("-1:22f53b7d9aba2cef44755f7078b01614cd4dde2388a1729c2c386cf8f9898afe"));
     log.info("shardAccount.balance {}", Utils.formatNanoValue(shardAccount.getBalance()));
   }
@@ -548,10 +549,10 @@ public class TestExporter {
     ShardAccountLazy shardAccount =
         exporter.getShardAccountByAddress(
             blockIdExtMc,
+            //
             // Address.of("-1:0000000000000000000000000000000000000000000000000000000000000000"));
-            Address.of("-1:3333333333333333333333333333333333333333333333333333333333333333"));
-
-    // Address.of("-1:22f53b7d9aba2cef44755f7078b01614cd4dde2388a1729c2c386cf8f9898afe"));
+            // Address.of("-1:3333333333333333333333333333333333333333333333333333333333333333"));
+            Address.of("-1:22f53b7d9aba2cef44755f7078b01614cd4dde2388a1729c2c386cf8f9898afe"));
     log.info("shardAccount {}", shardAccount);
     log.info("shardAccount.balance {}", Utils.formatNanoValue(shardAccount.getBalance()));
   }

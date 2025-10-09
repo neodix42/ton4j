@@ -49,7 +49,7 @@ public class ShardAccountLazy implements Serializable {
     //      return null;
     //    }
     if (cs.getHashes().length == 0) {
-      return null;
+      throw new IllegalStateException("shard account has no hashes");
     }
     //    byte[] hash = Utils.slice(cs.getHashes(), 32, 32);
     byte[] hash = Utils.slice(cs.getHashes(), cs.getHashes().length - 32, 32);
