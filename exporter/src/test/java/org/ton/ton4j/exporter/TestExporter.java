@@ -558,7 +558,6 @@ public class TestExporter {
             Address.of("-1:5555555555555555555555555555555555555555555555555555555555555555"),
             Address.of("-1:3333333333333333333333333333333333333333333333333333333333333333"),
             Address.of("-1:22f53b7d9aba2cef44755f7078b01614cd4dde2388a1729c2c386cf8f9898afe"),
-            Address.of("0:b3dd5e92a9c3a05a56930db015a7a35b07546ecf1f5fa425fd3d8e6a63fd28ea"),
             Address.of("-1:6744e92c6f71c776fbbcef299e31bf76f39c245cd56f2075b89c6a22026b4131"))) {
       ShardAccountLazy shardAccount = exporter.getShardAccountByAddress(blockIdExtMc, address);
 

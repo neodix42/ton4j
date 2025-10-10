@@ -61,7 +61,7 @@ public class ShardAccountsLazy {
 
     // find by hash and load non-empty dictAugE
     byte[] rootHash = Utils.slice(rootSlice.hashes, 0, 32);
-    Cell cell = rootSlice.getRefByHash(rootHash);
+    Cell rootCell = rootSlice.getRefByHash(rootHash);
 
     // Prepare the key
     BigInteger key = address.toBigInteger();
@@ -71,18 +71,24 @@ public class ShardAccountsLazy {
 
     // Traverse the Patricia tree - following C++ DictionaryFixed::lookup
     int n = 256; // remaining key bits
+    int keyOffset = 0; // current position in key
     while (true) {
-      //      log.info("n {}", n);
       // Parse label using LabelParser (like C++)
       LabelParser label =
-          new LabelParser(rootSlice.cellDbReader, cell, n, 0); // label_mode=0 for no validation
+          new LabelParser(rootSlice.cellDbReader, rootCell, n, 0); // label_mode=0 for no validation
 
       // Check if label is a prefix of remaining key
-      //      if (!label.isPrefixOf(keyBits, n)) {
-      //        return null;
-      //      }
+      // Create a view of the remaining key bits starting from keyOffset
+      BitString remainingKey = new BitString(n);
+      for (int i = 0; i < n && keyOffset + i < keyBits.getUsedBits(); i++) {
+        remainingKey.writeBit(keyBits.get(keyOffset + i));
+      }
 
-      // Advance key position
+      if (!label.isPrefixOf(remainingKey, n)) {
+        log.error("not a prefix");
+        return null;
+      }
+
       n -= label.getLBits();
 
       if (n <= 0) {
@@ -90,33 +96,21 @@ public class ShardAccountsLazy {
         assert n == 0;
         label.skipLabel();
         CellSliceLazy leafSlice = label.getRemainder();
-
-        // read extra
+        // read extra (DepthBalanceInfo)
         DepthBalanceInfoLazy depthBalanceInfoLazy = DepthBalanceInfoLazy.deserialize(leafSlice);
-
-        // read value
+        // read value (ShardAccount)
         return ShardAccountLazy.deserialize(leafSlice);
       }
 
-      // Not at leaf, need to follow a branch
-      // Advance key by label length
-      for (int i = 0; i < label.getLBits(); i++) {
-        keyBits.readBit();
-      }
+      keyOffset += label.getLBits();
 
-      // Read next key bit to determine branch
-      boolean sw = keyBits.readBit();
-      n--;
+      // Not at leaf, need to follow a branch, read next key bit to determine branch
+      boolean sw = keyBits.get(keyOffset);
+      keyOffset++;
+      n++;
 
-      // Load the appropriate child cell
-
-      byte[] hash =
-          Utils.slice(
-              label.getRemainder().hashes,
-              //              ((sw && label.getRemainder().hashes.length > 32) ? 1 : 0) * 32,
-              (sw ? 1 : 0) * 32,
-              32);
-      cell = label.getRemainder().getRefByHash(hash);
+      byte[] hash = Utils.slice(label.getRemainder().hashes, (sw ? 1 : 0) * 32, 32);
+      rootCell = label.getRemainder().getRefByHash(hash);
     }
   }
 }

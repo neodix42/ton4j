@@ -286,6 +286,7 @@ public class CellSliceLazy implements Serializable {
       if (refsCount > 0) {
         byte[] hash = Utils.slice(hashes, 0, 32);
         hashes = Arrays.copyOfRange(hashes, 32, hashes.length); // remove hash
+        refsCount--;
 
         Cell refCell = getRefByHash(hash);
 
@@ -313,6 +314,7 @@ public class CellSliceLazy implements Serializable {
       if (refsCount > 0) {
         byte[] hash = Utils.slice(hashes, 0, 32);
         hashes = Arrays.copyOfRange(hashes, 32, hashes.length); // remove hash
+        refsCount--;
 
         Cell refCell = getRefByHash(hash);
 
@@ -347,6 +349,7 @@ public class CellSliceLazy implements Serializable {
       TonPfxHashMapELazy hashMap = new TonPfxHashMapELazy(n);
       byte[] hash = Utils.slice(hashes, 0, 32);
       hashes = Arrays.copyOfRange(hashes, 32, hashes.length); // remove hash
+      refsCount--;
       Cell refCell = getRefByHash(hash);
 
       hashMap.deserialize(CellSliceLazy.beginParse(cellDbReader, refCell), keyParser, valueParser);
