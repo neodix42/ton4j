@@ -6,6 +6,7 @@ import java.io.Serializable;
 import java.math.BigInteger;
 import lombok.Builder;
 import lombok.Data;
+import lombok.extern.slf4j.Slf4j;
 import org.ton.ton4j.cell.Cell;
 import org.ton.ton4j.cell.CellBuilder;
 import org.ton.ton4j.cell.CellType;
@@ -19,6 +20,7 @@ import org.ton.ton4j.utils.Utils;
  * last_trans_lt:uint64 = ShardAccount;
  * <pre>
  */
+@Slf4j
 @Builder
 @Data
 public class ShardAccountLazy implements Serializable {
@@ -45,11 +47,11 @@ public class ShardAccountLazy implements Serializable {
     if (cs.type == CellType.PRUNED_BRANCH) {
       return null;
     }
-    //    if (cs.getRefsCount() == 0) {
-    //      return null;
-    //    }
+
     if (cs.getHashes().length == 0) {
-      throw new IllegalStateException("shard account has no hashes");
+      log.error("shard account has no hashes");
+      return null;
+      //      throw new IllegalStateException("shard account has no hashes");
     }
     //    byte[] hash = Utils.slice(cs.getHashes(), 32, 32);
     byte[] hash = Utils.slice(cs.getHashes(), cs.getHashes().length - 32, 32);

@@ -1436,10 +1436,10 @@ public class Exporter {
     try (CellDbReader cellDbReader = new CellDbReader(tonDatabaseRootPath)) {
       String key = "desc" + Utils.bytesToBase64(Utils.sha256AsArray(blockIdExt.serializeBoxed()));
       byte[] value = cellDbReader.getCellDb().get(key.getBytes());
-      log.info("key: {}, value: {}", key, Utils.bytesToHex(value));
+      //      log.info("key: {}, value: {}", key, Utils.bytesToHex(value));
 
       CellDbValue cellDbValue = CellDbValue.deserialize(ByteBuffer.wrap(value));
-      log.info("cellDbValue: {}", cellDbValue);
+      //      log.info("cellDbValue: {}", cellDbValue);
       byte[] shardStateRootHash = cellDbValue.rootHash;
 
       // find full cell containing ShardStateUnsplit by shardStateRootHash
@@ -1448,7 +1448,7 @@ public class Exporter {
       // level cell
 
       Cell c = parseCell(ByteBuffer.wrap(rawShardStateUnsplit));
-      log.info("getMaxLevel: {}, getDepthLevels: {}", c.getMaxLevel(), c.getDepthLevels());
+      //      log.info("getMaxLevel: {}, getDepthLevels: {}", c.getMaxLevel(), c.getDepthLevels());
 
       ShardStateUnsplitLazy shardStateUnsplitLazy =
           ShardStateUnsplitLazy.deserialize(

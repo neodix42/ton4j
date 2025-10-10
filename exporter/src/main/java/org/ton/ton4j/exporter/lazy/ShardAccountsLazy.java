@@ -1,7 +1,6 @@
 package org.ton.ton4j.exporter.lazy;
 
 import java.math.BigInteger;
-import java.util.List;
 import lombok.Builder;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
@@ -33,12 +32,6 @@ public class ShardAccountsLazy {
   public static ShardAccountsLazy deserialize(CellSliceLazy cs) {
     // Don't deserialize the entire hashmap - just store the root
     return ShardAccountsLazy.builder().rootSlice(cs).cellDbReader(cs.cellDbReader).build();
-  }
-
-  public List<ShardAccountLazy> getShardAccountsAsList() {
-    // This would load all accounts - not recommended for lazy loading
-    throw new UnsupportedOperationException(
-        "getShardAccountsAsList() not supported for lazy ShardAccounts - use lookup instead");
   }
 
   /**
@@ -79,7 +72,7 @@ public class ShardAccountsLazy {
     // Traverse the Patricia tree - following C++ DictionaryFixed::lookup
     int n = 256; // remaining key bits
     while (true) {
-      log.info("n {}", n);
+      //      log.info("n {}", n);
       // Parse label using LabelParser (like C++)
       LabelParser label =
           new LabelParser(rootSlice.cellDbReader, cell, n, 0); // label_mode=0 for no validation
@@ -98,16 +91,10 @@ public class ShardAccountsLazy {
         label.skipLabel();
         CellSliceLazy leafSlice = label.getRemainder();
 
-        // Skip the augmentation data (DepthBalanceInfo)
-        // depth_balance$_ split_depth:(#<= 30) balance:CurrencyCollection
-        //        leafSlice.loadUint(5); // skip split_depth
-        //        skipCurrencyCollection(leafSlice); // skip balance
         // read extra
         DepthBalanceInfoLazy depthBalanceInfoLazy = DepthBalanceInfoLazy.deserialize(leafSlice);
-        log.info("depthBalanceInfoLazy {}", depthBalanceInfoLazy);
 
         // read value
-        // Now leafSlice points to the ShardAccount value
         return ShardAccountLazy.deserialize(leafSlice);
       }
 
@@ -122,28 +109,14 @@ public class ShardAccountsLazy {
       n--;
 
       // Load the appropriate child cell
-      cell =
-          label
-              .getRemainder()
-              .getRefByHash(Utils.slice(label.getRemainder().hashes, (sw ? 1 : 0) * 32, 32));
-    }
-  }
 
-  /** Skip CurrencyCollection = Grams + ExtraCurrencyCollection */
-  private void skipCurrencyCollection(CellSliceLazy cs) {
-    // Skip Grams (VarUInteger 16)
-    skipVarUInteger(cs, 16);
-    // Skip ExtraCurrencyCollection (HashmapE 32 ...)
-    boolean hasExtra = cs.loadBit();
-    if (hasExtra) {
-      cs.loadRef();
+      byte[] hash =
+          Utils.slice(
+              label.getRemainder().hashes,
+              //              ((sw && label.getRemainder().hashes.length > 32) ? 1 : 0) * 32,
+              (sw ? 1 : 0) * 32,
+              32);
+      cell = label.getRemainder().getRefByHash(hash);
     }
-  }
-
-  /** Skip VarUInteger n */
-  private void skipVarUInteger(CellSliceLazy cs, int n) {
-    int lenBits = 32 - Integer.numberOfLeadingZeros(n - 1);
-    int len = cs.loadUint(lenBits).intValue();
-    cs.skipBits(len * 8);
   }
 }

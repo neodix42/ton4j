@@ -1,5 +1,6 @@
 package org.ton.ton4j.exporter;
 
+import static java.util.Objects.nonNull;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.google.gson.Gson;
@@ -8,6 +9,7 @@ import com.google.gson.ToNumberPolicy;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.List;
 import java.util.TreeMap;
 import java.util.stream.Stream;
 import lombok.extern.slf4j.Slf4j;
@@ -527,15 +529,19 @@ public class TestExporter {
     //    org.ton.ton4j.tl.types.db.block.BlockIdExt blockIdExt = exporter.getLastBlockIdExt();
 
     log.info("blockIdExt {}", blockIdExt);
-    ShardAccountLazy shardAccount =
-        exporter.getShardAccountByAddress(
-            blockIdExt,
-            // Address.of("-1:3333333333333333333333333333333333333333333333333333333333333333"));
-            // Address.of("-1:ac76977d75e874006e37bf1113ff0b111851b1b72217b7e281424d2389be0122"));
-            Address.of(
-                "0:B3DD5C861F4B3FF36DA1996E31EF8394A83D0A5D08CFA472ADC2EB804E5E849A")); // 0.006007998
-    // Address.of("-1:22f53b7d9aba2cef44755f7078b01614cd4dde2388a1729c2c386cf8f9898afe"));
-    log.info("shardAccount.balance {}", Utils.formatNanoValue(shardAccount.getBalance()));
+    for (Address address :
+        List.of(
+            Address.of("0:b3dd5e92a9c3a05a56930db015a7a35b07546ecf1f5fa425fd3d8e6a63fd28ea"),
+            Address.of("0:7216E9DB71ACDDECBA3944137540C400F11FBABEBEB23138FA5535C6A8784F2C"),
+            Address.of("0:1da77f0269bbbb76c862ea424b257df63bd1acb0d4eb681b68c9aadfbf553b93"))) {
+      ShardAccountLazy shardAccount = exporter.getShardAccountByAddress(blockIdExt, address);
+      if (nonNull(shardAccount)) {
+        log.info("shardAccount {}", shardAccount);
+        log.info("shardAccount.balance {}", Utils.formatNanoValue(shardAccount.getBalance()));
+      } else {
+        log.info("shardAccount {} of address {}", shardAccount, address.toRaw());
+      }
+    }
   }
 
   @Test
@@ -546,14 +552,22 @@ public class TestExporter {
     // blockIdExtMc - 28,385.246832021
     // blockIdExt - 26,264.412991196 last
     log.info("blockIdExt {}", blockIdExtMc);
-    ShardAccountLazy shardAccount =
-        exporter.getShardAccountByAddress(
-            blockIdExtMc,
-            //
-            // Address.of("-1:0000000000000000000000000000000000000000000000000000000000000000"));
-            // Address.of("-1:3333333333333333333333333333333333333333333333333333333333333333"));
-            Address.of("-1:22f53b7d9aba2cef44755f7078b01614cd4dde2388a1729c2c386cf8f9898afe"));
-    log.info("shardAccount {}", shardAccount);
-    log.info("shardAccount.balance {}", Utils.formatNanoValue(shardAccount.getBalance()));
+    for (Address address :
+        List.of(
+            Address.of("-1:0000000000000000000000000000000000000000000000000000000000000000"),
+            Address.of("-1:5555555555555555555555555555555555555555555555555555555555555555"),
+            Address.of("-1:3333333333333333333333333333333333333333333333333333333333333333"),
+            Address.of("-1:22f53b7d9aba2cef44755f7078b01614cd4dde2388a1729c2c386cf8f9898afe"),
+            Address.of("0:b3dd5e92a9c3a05a56930db015a7a35b07546ecf1f5fa425fd3d8e6a63fd28ea"),
+            Address.of("-1:6744e92c6f71c776fbbcef299e31bf76f39c245cd56f2075b89c6a22026b4131"))) {
+      ShardAccountLazy shardAccount = exporter.getShardAccountByAddress(blockIdExtMc, address);
+
+      if (nonNull(shardAccount)) {
+        log.info("shardAccount {}", shardAccount);
+        log.info("shardAccount.balance {}", Utils.formatNanoValue(shardAccount.getBalance()));
+      } else {
+        log.info("shardAccount {} of address {}", shardAccount, address.toRaw());
+      }
+    }
   }
 }

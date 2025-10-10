@@ -60,7 +60,7 @@ public class CellDbReader implements Closeable {
 
     try {
       cellDb = new RocksDbWrapper(cellDbPath.toString());
-      log.info("Initialized CellDB database: {}", cellDbPath);
+      //      log.info("Initialized CellDB database: {}", cellDbPath);
     } catch (IOException e) {
       throw new IOException("Could not initialize CellDB database: " + e.getMessage(), e);
     }
@@ -128,7 +128,7 @@ public class CellDbReader implements Closeable {
   public void close() throws IOException {
     if (cellDb != null) {
       cellDb.close();
-      log.debug("Closed CellDB database");
+      //      log.debug("Closed CellDB database");
     }
   }
 }

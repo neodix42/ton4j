@@ -283,7 +283,7 @@ public class CellSliceLazy implements Serializable {
       return new TonHashMapELazy(n);
     } else {
       TonHashMapELazy hashMap = new TonHashMapELazy(n);
-      if (hashes.length / 32 > 0) {
+      if (refsCount > 0) {
         byte[] hash = Utils.slice(hashes, 0, 32);
         hashes = Arrays.copyOfRange(hashes, 32, hashes.length); // remove hash
 
@@ -310,7 +310,7 @@ public class CellSliceLazy implements Serializable {
       return new TonHashMapAugELazy(n);
     } else {
       TonHashMapAugELazy hashMap = new TonHashMapAugELazy(n);
-      if (hashes.length / 32 > 0) {
+      if (refsCount > 0) {
         byte[] hash = Utils.slice(hashes, 0, 32);
         hashes = Arrays.copyOfRange(hashes, 32, hashes.length); // remove hash
 
