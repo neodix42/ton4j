@@ -78,8 +78,8 @@ public class ShardStateUnsplitLazy implements Serializable {
         .endCell();
   }
 
-  public static ShardStateUnsplitLazy deserialize(CellDbReader cellDb, CellSliceLazy cs)
-      throws IOException {
+  public static ShardStateUnsplitLazy deserialize(
+      CellDbReader cellDb, CellSliceLazy cs, boolean full) throws IOException {
     if (cs.isExotic()) {
       return ShardStateUnsplitLazy.builder().build();
     }
@@ -115,8 +115,13 @@ public class ShardStateUnsplitLazy implements Serializable {
 
     Cell shardAccountsCell = cs.getRefByHash(shardAccountsKeyHash);
 
-    shardStateUnsplitLazy.setShardAccounts(
-        ShardAccountsLazy.deserialize(CellSliceLazy.beginParse(cellDb, shardAccountsCell)));
+    if (full) {
+      shardStateUnsplitLazy.setShardAccounts(
+          ShardAccountsLazy.deserialize(CellSliceLazy.beginParse(cellDb, shardAccountsCell)));
+    } else {
+      shardStateUnsplitLazy.setShardAccounts(
+          ShardAccountsLazy.prepare(CellSliceLazy.beginParse(cellDb, shardAccountsCell)));
+    }
 
     // ref3
     //    shardStateUnsplit.setShardStateInfo(

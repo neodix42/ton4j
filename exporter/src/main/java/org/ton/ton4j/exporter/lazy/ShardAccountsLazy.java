@@ -1,6 +1,9 @@
 package org.ton.ton4j.exporter.lazy;
 
 import java.math.BigInteger;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 import lombok.Builder;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
@@ -23,15 +26,49 @@ import org.ton.ton4j.utils.Utils;
 public class ShardAccountsLazy {
   CellSliceLazy rootSlice;
   CellDbReader cellDbReader;
+  TonHashMapAugELazy shardAccounts;
 
   public Cell toCell() {
     // Not implemented for lazy version
     throw new UnsupportedOperationException("toCell() not supported for lazy ShardAccounts");
   }
 
-  public static ShardAccountsLazy deserialize(CellSliceLazy cs) {
+  public static ShardAccountsLazy prepare(CellSliceLazy cs) {
     // Don't deserialize the entire hashmap - just store the root
     return ShardAccountsLazy.builder().rootSlice(cs).cellDbReader(cs.cellDbReader).build();
+  }
+
+  public static ShardAccountsLazy deserialize(CellSliceLazy cs) {
+
+    return ShardAccountsLazy.builder()
+        .shardAccounts(
+            cs.loadDictAugE(256, k -> k.readUint(256), v -> v, e -> e)
+            //                ShardAccountLazy::deserialize,
+            //                DepthBalanceInfoLazy::deserialize)
+            )
+        .build();
+  }
+
+  public List<ShardAccountLazy> getShardAccountsAsList() {
+    List<ShardAccountLazy> shardAccounts = new ArrayList<>();
+    for (Map.Entry<Object, ValueExtra> entry : this.shardAccounts.elements.entrySet()) {
+      shardAccounts.add((ShardAccountLazy) entry.getValue().getValue());
+    }
+    return shardAccounts;
+  }
+
+  public ShardAccountLazy getShardAccountByAddressFull(Address address) {
+    log.info("searching among {} shard accounts", this.shardAccounts.elements.size());
+    //    for (Map.Entry<Object, ValueExtra> entry : this.shardAccounts.elements.entrySet()) {
+    //      CellSliceLazy cs = (CellSliceLazy) entry.getValue().getValue();
+    //      log.info("key {} value {}", entry.getKey(), (ShardAccountLazy.deserialize(cs)));
+    //    }
+    ValueExtra valueExtra = this.shardAccounts.elements.get(address.toBigInteger());
+
+    CellSliceLazy cs = (CellSliceLazy) valueExtra.getValue();
+    return (ShardAccountLazy.deserialize(cs));
+    // or
+    //    return (ShardAccountLazy) valueExtra.getValue();
   }
 
   /**

@@ -112,15 +112,13 @@ public class CellDbReader implements Closeable {
         }
       }
 
-      Cell cell =
-          CellBuilder.beginCell()
-              .storeBitString(new BitString(payload, cellSerializationInfo.getDataLength() * 8))
-              .storeHashes(allHashes)
-              .setExotic(cellSerializationInfo.isSpecial())
-              .setLevelMask(cellSerializationInfo.getLevelMask())
-              .setRefsCount(cellSerializationInfo.getRefsCount())
-              .endCellNoRecalculation();
-      return cell;
+      return CellBuilder.beginCell()
+          .storeBitString(new BitString(payload, cellSerializationInfo.getDataLength() * 8))
+          .storeHashes(allHashes)
+          .setExotic(cellSerializationInfo.isSpecial())
+          .setLevelMask(cellSerializationInfo.getLevelMask())
+          .setRefsCount(cellSerializationInfo.getRefsCount())
+          .endCellNoRecalculation();
     }
   }
 

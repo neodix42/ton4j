@@ -1431,8 +1431,8 @@ public class Exporter {
     }
   }
 
-  public ShardAccountLazy getShardAccountByAddress(BlockIdExt blockIdExt, Address address)
-      throws IOException {
+  public ShardAccountLazy getShardAccountByAddress(
+      BlockIdExt blockIdExt, Address address, boolean full) throws IOException {
     try (CellDbReader cellDbReader = new CellDbReader(tonDatabaseRootPath)) {
       String key = "desc" + Utils.bytesToBase64(Utils.sha256AsArray(blockIdExt.serializeBoxed()));
       byte[] value = cellDbReader.getCellDb().get(key.getBytes());
@@ -1444,17 +1444,20 @@ public class Exporter {
 
       // find full cell containing ShardStateUnsplit by shardStateRootHash
       byte[] rawShardStateUnsplit = cellDbReader.getCellDb().get(shardStateRootHash);
-      //      log.info("rawShardStateUnsplit: {}", Utils.bytesToHex(rawShardStateUnsplit)); // top
-      // level cell
+      // log.info("rawShardStateUnsplit: {}", Utils.bytesToHex(rawShardStateUnsplit)); // top cell
 
       Cell c = parseCell(ByteBuffer.wrap(rawShardStateUnsplit));
       //      log.info("getMaxLevel: {}, getDepthLevels: {}", c.getMaxLevel(), c.getDepthLevels());
 
       ShardStateUnsplitLazy shardStateUnsplitLazy =
           ShardStateUnsplitLazy.deserialize(
-              cellDbReader, CellSliceLazy.beginParse(cellDbReader, c));
+              cellDbReader, CellSliceLazy.beginParse(cellDbReader, c), full);
 
-      return shardStateUnsplitLazy.getShardAccounts().getShardAccountByAddress(address);
+      if (full) {
+        return shardStateUnsplitLazy.getShardAccounts().getShardAccountByAddressFull(address);
+      } else {
+        return shardStateUnsplitLazy.getShardAccounts().getShardAccountByAddress(address);
+      }
     }
   }
 }

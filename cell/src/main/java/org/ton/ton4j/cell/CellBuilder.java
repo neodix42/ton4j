@@ -363,6 +363,7 @@ public class CellBuilder {
 
   public CellBuilder storeHashes(byte[] hashes) {
     cell.setHashes(hashes);
+    cell.setRefsCount(hashes.length / 32);
     return this;
   }
 

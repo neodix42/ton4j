@@ -32,8 +32,7 @@ public class TonHashMapAugLazy implements Serializable {
       return new ArrayList<>();
     }
     List<Node> nodes = new ArrayList<>();
-    int m = keySize - key.getUsedBits();
-    BitString l = deserializeLabel(edge, m);
+    BitString l = deserializeLabel(edge, keySize - key.getUsedBits());
     key.writeBitString(l);
     if (key.getUsedBits() == keySize) {
       Cell valueAndExtra =
