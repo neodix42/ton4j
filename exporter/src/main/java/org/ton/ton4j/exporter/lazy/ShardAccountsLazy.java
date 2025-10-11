@@ -107,7 +107,7 @@ public class ShardAccountsLazy {
       // Not at leaf, need to follow a branch, read next key bit to determine branch
       boolean sw = keyBits.get(keyOffset);
       keyOffset++;
-      n++;
+      n--;
 
       byte[] hash = Utils.slice(label.getRemainder().hashes, (sw ? 1 : 0) * 32, 32);
       rootCell = label.getRemainder().getRefByHash(hash);
