@@ -39,28 +39,32 @@ public class TonHashMapLazy implements Serializable {
       return new ArrayList<>();
     }
     List<Node> nodes = new ArrayList<>(4);
-    BitString l = deserializeLabel(edge, keySize - key.getUsedBits());
-    key.writeBitString(l);
-    if (key.getUsedBits() == keySize) {
+
+    // ✓ Clone FIRST, then modify the clone
+    BitString currentKey = key.clone();
+
+    BitString l = deserializeLabel(edge, keySize - currentKey.getUsedBits());
+    currentKey.writeBitString(l);
+    if (currentKey.getUsedBits() == keySize) {
       Cell value = CellBuilder.beginCell().storeSliceLazy(edge.bits, edge.getHashes()).endCell();
-      nodes.add(new Node(key, value));
+      nodes.add(new Node(currentKey, value));
       return nodes;
     }
 
-    int refsCount = edge.getRefsCountLazy();
+    int refsCount = Math.min(edge.getRefsCountLazy(), 2);
 
     if (refsCount > 0) {
-      int hashesPerRef = edge.hashes.length / 32 / refsCount;
+      //      int hashesPerRef = edge.hashes.length / 32 / refsCount;
 
-      for (int j = 0; j < refsCount; j++) {
+      for (int i = 0; i < refsCount; i++) {
         // Get the PRIMARY hash (first hash) for this reference
-        byte[] hash = Utils.slice(edge.hashes, (j * hashesPerRef * 32), 32);
+        byte[] hash = Utils.slice(edge.hashes, i * 32, 32);
         Cell refCell = edge.getRefByHash(hash);
 
         CellSliceLazy forkEdge = CellSliceLazy.beginParse(edge.cellDbReader, refCell);
 
-        BitString forkKey = key.clone();
-        forkKey.writeBit(j != 0);
+        BitString forkKey = currentKey.clone();
+        forkKey.writeBit(i != 0);
         nodes.addAll(deserializeEdge(forkEdge, keySize, forkKey));
       }
     }

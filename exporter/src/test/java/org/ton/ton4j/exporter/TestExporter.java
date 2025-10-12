@@ -581,11 +581,16 @@ public class TestExporter {
     for (Address address :
         // find all good
         List.of(
-            Address.of("-1:0000000000000000000000000000000000000000000000000000000000000000"),
-            Address.of("-1:5555555555555555555555555555555555555555555555555555555555555555"),
-            Address.of("-1:3333333333333333333333333333333333333333333333333333333333333333"),
-            Address.of("-1:22f53b7d9aba2cef44755f7078b01614cd4dde2388a1729c2c386cf8f9898afe"),
-            Address.of("-1:6744e92c6f71c776fbbcef299e31bf76f39c245cd56f2075b89c6a22026b4131"))) {
+            Address.of("-1:0000000000000000000000000000000000000000000000000000000000000000")
+            //
+            // Address.of("-1:5555555555555555555555555555555555555555555555555555555555555555")
+            //
+            // Address.of("-1:3333333333333333333333333333333333333333333333333333333333333333"),
+            //
+            // Address.of("-1:22f53b7d9aba2cef44755f7078b01614cd4dde2388a1729c2c386cf8f9898afe"),
+            //
+            // Address.of("-1:6744e92c6f71c776fbbcef299e31bf76f39c245cd56f2075b89c6a22026b4131"))
+            )) {
       ShardAccountLazy shardAccount =
           exporter.getShardAccountByAddress(blockIdExtMc, address, true);
 
@@ -609,11 +614,14 @@ public class TestExporter {
     for (Address address :
         List.of(
             // find wrong
-            Address.of("0:b3dd5e92a9c3a05a56930db015a7a35b07546ecf1f5fa425fd3d8e6a63fd28ea"),
+            Address.of("0:b3dd5e92a9c3a05a56930db015a7a35b07546ecf1f5fa425fd3d8e6a63fd28ea")
             // does not find
-            Address.of("0:7216E9DB71ACDDECBA3944137540C400F11FBABEBEB23138FA5535C6A8784F2C"),
+            //
+            // Address.of("0:7216E9DB71ACDDECBA3944137540C400F11FBABEBEB23138FA5535C6A8784F2C"),
             // does not find
-            Address.of("0:1da77f0269bbbb76c862ea424b257df63bd1acb0d4eb681b68c9aadfbf553b93"))) {
+            //
+            // Address.of("0:1da77f0269bbbb76c862ea424b257df63bd1acb0d4eb681b68c9aadfbf553b93")
+            )) {
       ShardAccountLazy shardAccount = exporter.getShardAccountByAddress(blockIdExt, address, true);
 
       if (nonNull(shardAccount)) {

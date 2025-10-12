@@ -28,39 +28,111 @@ public class TonHashMapAugLazy implements Serializable {
 
   public List<Node> deserializeEdge(CellSliceLazy edge, int keySize, final BitString key) {
     if (edge.type == CellType.PRUNED_BRANCH) {
-      //      System.out.println("TonHashMapAug: pruned branch in cell");
       return new ArrayList<>();
     }
+
     List<Node> nodes = new ArrayList<>();
-    BitString l = deserializeLabel(edge, keySize - key.getUsedBits());
-    key.writeBitString(l);
-    if (key.getUsedBits() == keySize) {
+    BitString currentKey = key.clone();
+    
+    // Parse label using the ORIGINAL custom method (not LabelParser)
+    BitString l = deserializeLabel(edge, keySize - currentKey.getUsedBits());
+    currentKey.writeBitString(l);
+    
+    // Check if we've reached a leaf (full key)
+    if (currentKey.getUsedBits() == keySize) {
+      // Leaf node - store the remainder as value+extra
       Cell valueAndExtra =
           CellBuilder.beginCell().storeSliceLazy(edge.bits, edge.getHashes()).endCell();
-      nodes.add(new Node(key, valueAndExtra)); // fork-extra does not exist in edge
+      
+      BitString independentKey = currentKey.clone();
+      independentKey.readCursor = 0;
+      
+      nodes.add(new Node(independentKey, valueAndExtra));
       return nodes;
     }
-
-    int refsCount = edge.getRefsCountLazy();
-
+    
+    // Fork node - traverse children (limit to 2, skip the 3rd augmentation ref)
+    int refsCount = Math.min(edge.getRefsCountLazy(), 2);
+    
     if (refsCount > 0) {
-      int hashesPerRef = edge.hashes.length / 32 / refsCount;
+      byte[][] childHashes = new byte[refsCount][];
+      for (int i = 0; i < refsCount; i++) {
+        childHashes[i] = Utils.slice(edge.hashes, i * 32, 32);
+      }
 
       for (int i = 0; i < refsCount; i++) {
-        // Get the PRIMARY hash (first hash) for this reference
-        byte[] hash = Utils.slice(edge.hashes, (i * hashesPerRef * 32), 32);
-
-        Cell refCell = edge.getRefByHash(hash);
-
+        Cell refCell = edge.getRefByHash(childHashes[i]);
         CellSliceLazy forkEdge = CellSliceLazy.beginParse(edge.cellDbReader, refCell);
 
-        BitString forkKey = key.clone();
+        BitString forkKey = currentKey.clone();
         forkKey.writeBit(i != 0);
         nodes.addAll(deserializeEdge(forkEdge, keySize, forkKey));
       }
     }
     return nodes;
   }
+
+  //  public List<Node> deserializeEdge(CellSliceLazy edge, int keySize, final BitString key) {
+  //    if (edge.type == CellType.PRUNED_BRANCH) {
+  //      //      System.out.println("TonHashMapAug: pruned branch in cell");
+  //      return new ArrayList<>();
+  //    }
+  //    List<Node> nodes = new ArrayList<>();
+  //
+  //    // ✓ Clone FIRST, then modify the clone
+  //    BitString currentKey = key.clone();
+  //
+  //    BitString l = deserializeLabel(edge, keySize - currentKey.getUsedBits());
+  //    currentKey.writeBitString(l);
+  //    if (currentKey.getUsedBits() == keySize) {
+  //      // Leaf node - has value+extra inline
+  //      Cell valueAndExtra =
+  //          CellBuilder.beginCell().storeSliceLazy(edge.bits, edge.getHashes()).endCell();
+  //      nodes.add(new Node(currentKey, valueAndExtra)); // fork-extra does not exist in edge
+  //      return nodes;
+  //    }
+  //
+  //    //    edge.loadUint(5); // Skip split_depth
+  //    //    edge.loadCoins(); // balance:CurrencyCollection grams:Grams (VarUInteger 16)
+  //    //    boolean hasExtraCurrencies = edge.loadBit(); // other:ExtraCurrencyCollection
+  // (HashmapE 32
+  //    // ...)
+  //    //    if (hasExtraCurrencies) {
+  //    //      byte[] hash = Utils.slice(edge.hashes, 0, 32);
+  //    //      edge.hashes = Arrays.copyOfRange(edge.hashes, 32, edge.hashes.length); // remove
+  // hash
+  //    //      edge.refsCount--;
+  //    //    }
+  //    //    DepthBalanceInfoLazy depthBalanceInfoLazy = DepthBalanceInfoLazy.deserialize(edge);
+  //    //    log.info(
+  //    //        "depthBalanceInfoLazy {}",
+  //    //        depthBalanceInfoLazy.getCurrencies().extraCurrencies.elements.size());
+  //
+  //    int refsCount = Math.min(edge.getRefsCountLazy(), 2);
+  //    //    int refsCount = edge.getRefsCountLazy();
+  //
+  //    if (refsCount > 0) {
+  //      //      int hashesPerRef = edge.hashes.length / 32 / refsCount;
+  //
+  //      for (int i = 0; i < refsCount; i++) {
+  //        // Get the PRIMARY hash (first hash) for this reference
+  //        //        if (i == 2) {
+  //        //          log.info("skip");
+  //        //          continue;
+  //        //        }
+  //        byte[] hash = Utils.slice(edge.hashes, i * 32, 32);
+  //        //        log.info("idx {}, hash {}", i, Utils.bytesToHex(hash));
+  //        Cell refCell = edge.getRefByHash(hash);
+  //
+  //        CellSliceLazy forkEdge = CellSliceLazy.beginParse(edge.cellDbReader, refCell);
+  //
+  //        BitString forkKey = currentKey.clone();
+  //        forkKey.writeBit(i != 0);
+  //        nodes.addAll(deserializeEdge(forkEdge, keySize, forkKey));
+  //      }
+  //    }
+  //    return nodes;
+  //  }
 
   public BitString deserializeLabel(CellSliceLazy edge, int m) {
     if (!edge.loadBit()) {
@@ -83,12 +155,22 @@ public class TonHashMapAugLazy implements Serializable {
       Function<CellSliceLazy, Object> extraParser) {
 
     List<Node> nodes = deserializeEdge(c, keySize, new BitString(keySize));
+    log.info("Total nodes traversed: {}", nodes.size());
+    Set<Object> uniqueKeys = new HashSet<>();
+
     for (Node node : nodes) {
       CellSliceLazy valueAndExtra = CellSliceLazy.beginParse(c.cellDbReader, node.getValue());
       Object extra = extraParser.apply(valueAndExtra);
       Object value = valueParser.apply(valueAndExtra);
-      elements.put(keyParser.apply(node.getKey()), new ValueExtra(value, extra));
+      // Clone the key before parsing to avoid consuming the original
+      BitString keyClone = node.getKey().clone();
+      keyClone.readCursor = 0;
+      Object parsedKey = keyParser.apply(keyClone);
+
+      elements.put(parsedKey, new ValueExtra(value, extra));
+      //      elements.put(keyParser.apply(node.getKey()), new ValueExtra(value, extra));
     }
+    log.info("Unique keys after deduplication: {}", elements.size());
   }
 
   /**

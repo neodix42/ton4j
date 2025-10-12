@@ -42,10 +42,12 @@ public class ShardAccountsLazy {
 
     return ShardAccountsLazy.builder()
         .shardAccounts(
-            cs.loadDictAugE(256, k -> k.readUint(256), v -> v, e -> e)
-            //                ShardAccountLazy::deserialize,
-            //                DepthBalanceInfoLazy::deserialize)
-            )
+            cs.loadDictAugE(
+                256,
+                k -> k.readUint(256),
+                //                    v -> v, e -> e)
+                ShardAccountLazy::deserialize,
+                DepthBalanceInfoLazy::deserialize))
         .build();
   }
 
@@ -65,10 +67,10 @@ public class ShardAccountsLazy {
     //    }
     ValueExtra valueExtra = this.shardAccounts.elements.get(address.toBigInteger());
 
-    CellSliceLazy cs = (CellSliceLazy) valueExtra.getValue();
-    return (ShardAccountLazy.deserialize(cs));
-    // or
-    //    return (ShardAccountLazy) valueExtra.getValue();
+    //    CellSliceLazy cs = (CellSliceLazy) valueExtra.getValue();
+    //    return (ShardAccountLazy.deserialize(cs));
+    //     or
+    return (ShardAccountLazy) valueExtra.getValue();
   }
 
   /**

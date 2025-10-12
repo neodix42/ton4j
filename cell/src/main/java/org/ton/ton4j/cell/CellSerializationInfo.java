@@ -24,7 +24,11 @@ public class CellSerializationInfo {
     LevelMask levelMask = new LevelMask(d1 >> 5);
 
     if (refsNum > 4) {
-      throw new Error("too many refs in cell");
+      if (refsNum != 7 || !withHashes) {
+        throw new Error("Invalid first byte");
+      }
+      refsNum = 0;
+      throw new Error("do not deserialize absent cells!");
     }
     int hashesOffset = 4 + 2;
     int n = levelMask.getHashesCount();
@@ -34,7 +38,7 @@ public class CellSerializationInfo {
     int dataLength = (d2 >> 1) + (d2 & 1);
     boolean dataWithBits = (d2 & 1) != 0;
     int refsOffset = dataOffset + dataLength;
-    int endOffset = refsOffset + (refsNum * 0); // +ref_byte_size
+    int endOffset = refsOffset + (refsNum * (32 + 2 + 1)); // hash+depth+levelMask
 
     return CellSerializationInfo.builder()
         .refsCount(refsNum)

@@ -68,6 +68,7 @@ public class CellDbReader implements Closeable {
 
   public static Cell parseCell(ByteBuffer data) throws IOException {
 
+    //    log.info("cell in hex {}", Utils.bytesToHex(data.array()));
     int flag = data.getInt();
     boolean storedBoc = false;
     if (flag == -1) {
@@ -94,21 +95,16 @@ public class CellDbReader implements Closeable {
       byte[] allHashes = new byte[0];
 
       if (cellSerializationInfo.getRefsCount() != 0) {
-        data.position(cellSerializationInfo.getRefsOffset());
-
         for (int i = 0; i < cellSerializationInfo.getRefsCount(); i++) {
-          int lMask = data.get() & 0xFF;
-          LevelMask levelMask = new LevelMask(lMask);
-          int hashesCount = levelMask.getHashesCount();
+          // skip level mask
+          data.get();
+          byte[] hash = new byte[32];
+          data.get(hash);
+          allHashes = Utils.concatBytes(allHashes, hash);
 
-          // Read all hashes for this reference
-          byte[] hashes = new byte[hashesCount * 32];
-          data.get(hashes);
-
-          // Read all depths for this reference (but don't use them for now)
-          byte[] depths = new byte[hashesCount * 2];
-          data.get(depths);
-          allHashes = Utils.concatBytes(allHashes, hashes);
+          // skip depth
+          data.get();
+          data.get();
         }
       }
 
