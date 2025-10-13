@@ -555,11 +555,13 @@ public class TestExporter {
     log.info("blockIdExt {}", blockIdExtMc);
     for (Address address :
         List.of(
-            //
+            // adnl 4999988444800000000, our - not found
             Address.of("-1:0000000000000000000000000000000000000000000000000000000000000000"),
             Address.of("-1:5555555555555555555555555555555555555555555555555555555555555555"),
             Address.of("-1:3333333333333333333333333333333333333333333333333333333333333333"),
+            // adnl 1000001000000000, our - ok
             Address.of("-1:22f53b7d9aba2cef44755f7078b01614cd4dde2388a1729c2c386cf8f9898afe"),
+            // adnl 669343021899572, our - not found
             Address.of("-1:6744e92c6f71c776fbbcef299e31bf76f39c245cd56f2075b89c6a22026b4131"))) {
       ShardAccountLazy shardAccount =
           exporter.getShardAccountByAddress(blockIdExtMc, address, false);
