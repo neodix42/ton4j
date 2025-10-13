@@ -1,5 +1,7 @@
 package org.ton.ton4j.exporter.lazy;
 
+import static java.util.Objects.isNull;
+
 import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.List;
@@ -42,12 +44,10 @@ public class ShardAccountsLazy {
 
     return ShardAccountsLazy.builder()
         .shardAccounts(
-            cs.loadDictAugE(
-                256,
-                k -> k.readUint(256),
-                //                    v -> v, e -> e)
-                ShardAccountLazy::deserialize,
-                DepthBalanceInfoLazy::deserialize))
+            cs.loadDictAugE(256, k -> k.readUint(256), v -> v, e -> e)
+            //                ShardAccountLazy::deserialize,
+            //                DepthBalanceInfoLazy::deserialize)
+            )
         .build();
   }
 
@@ -67,10 +67,13 @@ public class ShardAccountsLazy {
     //    }
     ValueExtra valueExtra = this.shardAccounts.elements.get(address.toBigInteger());
 
-    //    CellSliceLazy cs = (CellSliceLazy) valueExtra.getValue();
-    //    return (ShardAccountLazy.deserialize(cs));
+    if (isNull(valueExtra)) {
+      return null;
+    }
+    CellSliceLazy cs = (CellSliceLazy) valueExtra.getValue();
+    return (ShardAccountLazy.deserialize(cs));
     //     or
-    return (ShardAccountLazy) valueExtra.getValue();
+    //    return (ShardAccountLazy) valueExtra.getValue();
   }
 
   /**

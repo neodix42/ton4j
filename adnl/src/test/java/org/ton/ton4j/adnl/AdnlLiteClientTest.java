@@ -34,7 +34,7 @@ public class AdnlLiteClientTest {
 
   private static AdnlLiteClient client;
   private LiteClientConnectionPool pool;
-  private static final boolean mainnet = true;
+  private static final boolean mainnet = false;
 
   @BeforeAll
   static void tearBeforeAll() throws Exception {
@@ -1479,6 +1479,20 @@ public class AdnlLiteClientTest {
     AdnlLiteClient adnlLiteClient =
         AdnlLiteClient.builder().configUrl(Utils.getGlobalConfigUrlTestnetGithub()).build();
     log.info("balance {}", adnlLiteClient.getBalance(beneficiaryAddress));
+  }
+
+  @Test
+  public void testAccountBalanceAdnlOkMyLocalton() throws Exception {
+    TonGlobalConfig tonGlobalConfig =
+        TonGlobalConfig.loadFromUrl("http://localhost:8000/localhost.global.config.json");
+
+    AdnlLiteClient client = AdnlLiteClient.builder().globalConfig(tonGlobalConfig).build();
+
+    Address beneficiaryAddress =
+        Address.of("0:1da77f0269bbbb76c862ea424b257df63bd1acb0d4eb681b68c9aadfbf553b93");
+    log.info("beneficiaryAddress: {}", beneficiaryAddress.toBounceable());
+
+    log.info("balance {}", client.getBalance(beneficiaryAddress));
   }
 
   @Test
