@@ -82,19 +82,28 @@ public class LabelParser {
         }
       case 1:
         {
-          // hml_short$0 with unary length
-          cs.skipBits(1);
-          lBits = countLeadingOnes(cs);
+          // hml_short$10 - unary-encoded length
+          // Format: 10 + (1)*n + 0 + n bits of data
+          cs.skipBits(1); // skip the '1' bit (we already checked it's type 1)
+
+          // Count leading 1s for unary encoding
+          lBits = 0;
+          while (cs.preloadBitAt(lBits + 1)) { // +1 because we already skipped first bit
+            lBits++;
+          }
+
           if (lBits > maxLabelLen || cs.getRestBits() < 2 * lBits + 1) {
             return false;
           }
+
           lOffs = lBits + 2;
-          cs.skipBits(lBits + 1);
+          cs.skipBits(lBits + 1); // skip the unary encoding + terminating 0
+          lSame = 0;
           return true;
         }
       case 2:
         {
-          // hml_long$10
+          // hml_long$10 - explicit length
           int lenBits = 32 - Integer.numberOfLeadingZeros(maxLabelLen);
           cs.skipBits(2);
           if (cs.getRestBits() < lenBits) {
@@ -105,11 +114,12 @@ public class LabelParser {
             return false;
           }
           lOffs = lenBits + 2;
+          lSame = 0;
           return cs.getRestBits() >= lBits;
         }
       case 3:
         {
-          // hml_same$11
+          // hml_same$11 - same bit repeated
           int lenBits = 32 - Integer.numberOfLeadingZeros(maxLabelLen);
           if (cs.getRestBits() < 3 + lenBits) {
             return false;
@@ -147,10 +157,20 @@ public class LabelParser {
     if (lBits > len) {
       return false;
     } else if (lSame == 0) {
-      // Non-same label: check if key starts with the label bits from remainder
+      // Non-same label: check if remainder starts with the key bits
       CellSliceLazy tempRemainder = remainder.clone();
       for (int i = 0; i < lBits; i++) {
-        if (i >= key.getUsedBits() || key.get(i) != tempRemainder.loadBit()) {
+        if (i >= key.getUsedBits()) {
+          log.error(
+              "isPrefixOf: key too short at bit {}, lBits={}, key.getUsedBits()={}",
+              i,
+              lBits,
+              key.getUsedBits());
+          return false;
+        }
+        boolean keyBit = key.get(i);
+        boolean labelBit = tempRemainder.loadBit();
+        if (keyBit != labelBit) {
           return false;
         }
       }

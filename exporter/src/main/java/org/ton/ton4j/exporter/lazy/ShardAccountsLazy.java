@@ -80,7 +80,7 @@ public class ShardAccountsLazy {
    * Lookup a single account by address using Patricia tree traversal Port of C++
    * DictionaryFixed::lookup from crypto/vm/dict.cpp
    */
-  public ShardAccountLazy getShardAccountByAddress(Address address) {
+  public ShardAccountLazy lookup(Address address) {
     if (rootSlice == null) {
       return null;
     }
@@ -114,10 +114,21 @@ public class ShardAccountsLazy {
     // Traverse the Patricia tree - following C++ DictionaryFixed::lookup
     int n = 256; // remaining key bits
     int keyOffset = 0; // current position in key
+    int iteration = 0;
     while (true) {
+      iteration++;
+      log.info("=== Iteration {} ===", iteration);
+      log.info("n={}, keyOffset={}", n, keyOffset);
+
       // Parse label using LabelParser (like C++)
       LabelParser label =
           new LabelParser(rootSlice.cellDbReader, rootCell, n, 0); // label_mode=0 for no validation
+
+      log.info(
+          "Label parsed: lBits={}, lSame={}, lOffs={}",
+          label.getLBits(),
+          label.getLSame(),
+          label.getLOffs());
 
       // Check if label is a prefix of remaining key
       // Create a view of the remaining key bits starting from keyOffset
@@ -125,34 +136,94 @@ public class ShardAccountsLazy {
       for (int i = 0; i < n && keyOffset + i < keyBits.getUsedBits(); i++) {
         remainingKey.writeBit(keyBits.get(keyOffset + i));
       }
+      remainingKey.readCursor = 0;
+
+      log.info(
+          "keyBits.getUsedBits()={}, remainingKey.getUsedBits()={}",
+          keyBits.getUsedBits(),
+          remainingKey.getUsedBits());
+      log.info(
+          "First 8 bits of remainingKey: {}",
+          remainingKey.getUsedBits() >= 8
+              ? String.format(
+                  "%d%d%d%d%d%d%d%d",
+                  remainingKey.get(0) ? 1 : 0,
+                  remainingKey.get(1) ? 1 : 0,
+                  remainingKey.get(2) ? 1 : 0,
+                  remainingKey.get(3) ? 1 : 0,
+                  remainingKey.get(4) ? 1 : 0,
+                  remainingKey.get(5) ? 1 : 0,
+                  remainingKey.get(6) ? 1 : 0,
+                  remainingKey.get(7) ? 1 : 0)
+              : "N/A");
+      log.info(
+          "First 8 bits of keyBits at offset {}: {}",
+          keyOffset,
+          keyOffset + 8 <= keyBits.getUsedBits()
+              ? String.format(
+                  "%d%d%d%d%d%d%d%d",
+                  keyBits.get(keyOffset) ? 1 : 0,
+                  keyBits.get(keyOffset + 1) ? 1 : 0,
+                  keyBits.get(keyOffset + 2) ? 1 : 0,
+                  keyBits.get(keyOffset + 3) ? 1 : 0,
+                  keyBits.get(keyOffset + 4) ? 1 : 0,
+                  keyBits.get(keyOffset + 5) ? 1 : 0,
+                  keyBits.get(keyOffset + 6) ? 1 : 0,
+                  keyBits.get(keyOffset + 7) ? 1 : 0)
+              : "N/A");
 
       if (!label.isPrefixOf(remainingKey, n)) {
-        log.error("not a prefix");
+        log.error("not a prefix at iteration {}", iteration);
         return null;
       }
 
+      // Consume the label
       n -= label.getLBits();
+      keyOffset += label.getLBits();
 
+      log.info("After consuming label: n={}, keyOffset={}", n, keyOffset);
+
+      // Check if we've reached a leaf node AFTER consuming the label
       if (n <= 0) {
-        // Reached a leaf node
+        // Reached a leaf node - deserialize value directly
         assert n == 0;
+        log.info("Reached leaf node - returning value");
+
+        // Skip the label in the remainder to get to the value
         label.skipLabel();
+
+        // The remainder now contains the augmentation (DepthBalanceInfo) + value (ShardAccount)
         CellSliceLazy leafSlice = label.getRemainder();
+
         // read extra (DepthBalanceInfo)
         DepthBalanceInfoLazy depthBalanceInfoLazy = DepthBalanceInfoLazy.deserialize(leafSlice);
         // read value (ShardAccount)
         return ShardAccountLazy.deserialize(leafSlice);
       }
 
-      keyOffset += label.getLBits();
-
       // Not at leaf, need to follow a branch, read next key bit to determine branch
       boolean sw = keyBits.get(keyOffset);
+      log.info(
+          "Branch bit at keyOffset {}: {}, taking {} branch",
+          keyOffset,
+          sw ? 1 : 0,
+          sw ? "right" : "left");
       keyOffset++;
       n--;
 
-      byte[] hash = Utils.slice(label.getRemainder().hashes, (sw ? 1 : 0) * 32, 32);
+      // In CellDbReader.parseCell(), hashes array contains only reference hashes: [ref0_hash,
+      // ref1_hash, ...]
+      // So ref0 is at position 0, ref1 is at position 32
+      int hashOffset = (sw ? 1 : 0) * 32;
+      log.info(
+          "Reading hash at offset {} from hashes array of length {}",
+          hashOffset,
+          label.getRemainder().hashes.length);
+      byte[] hash = Utils.slice(label.getRemainder().hashes, hashOffset, 32);
+      //      log.info("Fetching cell with hash: {}", Utils.bytesToHex(hash));
+
       rootCell = label.getRemainder().getRefByHash(hash);
+      log.info("Following branch to next cell");
     }
   }
 }

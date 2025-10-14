@@ -1446,17 +1446,17 @@ public class Exporter {
       byte[] rawShardStateUnsplit = cellDbReader.getCellDb().get(shardStateRootHash);
       // log.info("rawShardStateUnsplit: {}", Utils.bytesToHex(rawShardStateUnsplit)); // top cell
 
-      Cell c = parseCell(ByteBuffer.wrap(rawShardStateUnsplit));
+      Cell shardStateCell = parseCell(ByteBuffer.wrap(rawShardStateUnsplit));
       //      log.info("getMaxLevel: {}, getDepthLevels: {}", c.getMaxLevel(), c.getDepthLevels());
 
       ShardStateUnsplitLazy shardStateUnsplitLazy =
           ShardStateUnsplitLazy.deserialize(
-              cellDbReader, CellSliceLazy.beginParse(cellDbReader, c), full);
+              cellDbReader, CellSliceLazy.beginParse(cellDbReader, shardStateCell), full);
 
       if (full) {
         return shardStateUnsplitLazy.getShardAccounts().getShardAccountByAddressFull(address);
       } else {
-        return shardStateUnsplitLazy.getShardAccounts().getShardAccountByAddress(address);
+        return shardStateUnsplitLazy.getShardAccounts().lookup(address);
       }
     }
   }

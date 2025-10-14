@@ -531,11 +531,14 @@ public class TestExporter {
     for (Address address :
         List.of(
             // adnl 777998095999, our algo finds nok - error "not a prefix"
-            Address.of("0:b3dd5c861f4b3ff36da1996e31ef8394a83d0a5d08cfa472adc2eb804e5e849a"),
+            Address.of("0:b3dd5c861f4b3ff36da1996e31ef8394a83d0a5d08cfa472adc2eb804e5e849a")
             // adnl 6007998, our algo finds ok
-            Address.of("0:b3dd5e92a9c3a05a56930db015a7a35b07546ecf1f5fa425fd3d8e6a63fd28ea"),
+            //
+            // Address.of("0:b3dd5e92a9c3a05a56930db015a7a35b07546ecf1f5fa425fd3d8e6a63fd28ea"),
             // adnl 777998095999, our algo finds nok - error "not a prefix"
-            Address.of("0:7216e9db71acddecba3944137540c400f11fbabebeb23138fa5535c6a8784f2c"))) {
+            //
+            // Address.of("0:7216e9db71acddecba3944137540c400f11fbabebeb23138fa5535c6a8784f2c")
+            )) {
       ShardAccountLazy shardAccount = exporter.getShardAccountByAddress(blockIdExt, address, false);
       if (nonNull(shardAccount)) {
         log.info("shardAccount {}", shardAccount);
@@ -549,9 +552,11 @@ public class TestExporter {
   @Test
   public void testCellDbReaderGetAccountBalanceMc() throws IOException {
     Exporter exporter = Exporter.builder().tonDatabaseRootPath(TON_DB_ROOT_PATH).build();
+    //    org.ton.ton4j.tl.types.db.block.BlockIdExt last = exporter.getLastBlockIdExt();
 
     // blockIdExtMc - 28,385.246832021
     // blockIdExt - 26,264.412991196 last
+    //    log.info("blockIdExt {}", last);
     log.info("blockIdExt {}", blockIdExtMc);
     for (Address address :
         List.of(

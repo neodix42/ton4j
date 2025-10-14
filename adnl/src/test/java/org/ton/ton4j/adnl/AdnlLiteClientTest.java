@@ -1489,7 +1489,7 @@ public class AdnlLiteClientTest {
     AdnlLiteClient client = AdnlLiteClient.builder().globalConfig(tonGlobalConfig).build();
 
     Address beneficiaryAddress =
-        Address.of("0:1da77f0269bbbb76c862ea424b257df63bd1acb0d4eb681b68c9aadfbf553b93");
+        Address.of("-1:0000000000000000000000000000000000000000000000000000000000000000");
     log.info("beneficiaryAddress: {}", beneficiaryAddress.toBounceable());
 
     log.info("balance {}", client.getBalance(beneficiaryAddress));
