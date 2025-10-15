@@ -10,6 +10,7 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.ToNumberPolicy;
 import java.io.*;
+import java.math.BigInteger;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
@@ -1458,6 +1459,46 @@ public class Exporter {
       } else {
         return shardStateUnsplitLazy.getShardAccounts().lookup(address);
       }
+    }
+  }
+
+  public BlockIdExt getBlockIdExt(BlockId blockId) throws IOException {
+    DbLtDescKey keyHash =
+        DbLtDescKey.builder().workchain(blockId.getWorkchain()).shard(blockId.shard).build();
+    int archiveIndex =
+        dbReader
+            .getGlobalIndexDbReader()
+            .getArchiveIndexBySeqno(blockId.getWorkchain(), blockId.getSeqno());
+
+    try (ArchiveIndexReader archiveIndexReader =
+        new ArchiveIndexReader(dbReader.getDbRootPath(), archiveIndex)) {
+
+      return archiveIndexReader.getBlockIdExtByDbLtDescKey(keyHash, blockId.getSeqno());
+    }
+  }
+
+  BigInteger getBalance(Address address) {
+    try (StateDbReader stateReader = new StateDbReader(tonDatabaseRootPath)) {
+
+      BlockIdExt lastBlockIdExt = stateReader.getLastBlockIdExt();
+      return getShardAccountByAddress(lastBlockIdExt, address, false).getBalance();
+
+    } catch (IOException e) {
+      throw new RuntimeException(e);
+    }
+  }
+
+  BigInteger getBalance(Address address, long seqno) {
+    try (StateDbReader ignored = new StateDbReader(tonDatabaseRootPath)) {
+
+      BlockId blockId =
+          BlockId.builder().workchain(-1).shard(0x8000000000000000L).seqno(seqno).build();
+
+      BlockIdExt lastBlockIdExt = getBlockIdExt(blockId);
+      return getShardAccountByAddress(lastBlockIdExt, address, false).getBalance();
+
+    } catch (IOException e) {
+      throw new RuntimeException(e);
     }
   }
 }
