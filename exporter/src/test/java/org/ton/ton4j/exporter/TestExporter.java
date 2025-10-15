@@ -531,12 +531,16 @@ public class TestExporter {
     for (Address address :
         List.of(
             // adnl 777998095999, our algo finds nok - error "not a prefix"
-            Address.of("0:b3dd5c861f4b3ff36da1996e31ef8394a83d0a5d08cfa472adc2eb804e5e849a"),
+            //
+            // Address.of("0:b3dd5c861f4b3ff36da1996e31ef8394a83d0a5d08cfa472adc2eb804e5e849a"),
             // adnl 6007998, our algo finds ok
-            Address.of("0:b3dd5e92a9c3a05a56930db015a7a35b07546ecf1f5fa425fd3d8e6a63fd28ea"),
+            Address.of("0:b3dd5e92a9c3a05a56930db015a7a35b07546ecf1f5fa425fd3d8e6a63fd28ea")
             // adnl 777998095999, our algo finds nok - error "not a prefix"
-            Address.of("0:7216e9db71acddecba3944137540c400f11fbabebeb23138fa5535c6a8784f2c"))) {
-      ShardAccountLazy shardAccount = exporter.getShardAccountByAddress(blockIdExt, address, false);
+            //
+            // Address.of("0:7216e9db71acddecba3944137540c400f11fbabebeb23138fa5535c6a8784f2c")
+            )) {
+      ShardAccountLazy shardAccount =
+          exporter.getShardAccountByAddress(blockIdExtMc, address, false);
       if (nonNull(shardAccount)) {
         log.info("shardAccount {}", shardAccount);
         log.info("shardAccount.balance {}", Utils.formatNanoValue(shardAccount.getBalance()));
@@ -630,6 +634,23 @@ public class TestExporter {
         log.info("shardAccount {} of address {}", shardAccount, address.toRaw());
       }
     }
+  }
+
+  @Test
+  public void testCellDbReaderGetBalanceLatestWc() {
+    Address address =
+        Address.of("0:b3dd5e92a9c3a05a56930db015a7a35b07546ecf1f5fa425fd3d8e6a63fd28ea");
+    Exporter exporter = Exporter.builder().tonDatabaseRootPath(TON_DB_ROOT_PATH).build();
+    log.info("Balance {}", Utils.formatNanoValue(exporter.getBalance(address)));
+  }
+
+  @Test
+  public void testCellDbReaderGetBalanceBySeqnoWc() {
+    Address address =
+        Address.of("0:b3dd5e92a9c3a05a56930db015a7a35b07546ecf1f5fa425fd3d8e6a63fd28ea");
+    long mcSeqno = 22000;
+    Exporter exporter = Exporter.builder().tonDatabaseRootPath(TON_DB_ROOT_PATH).build();
+    log.info("Balance {}", Utils.formatNanoValue(exporter.getBalance(address, mcSeqno)));
   }
 
   @Test

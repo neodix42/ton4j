@@ -8,6 +8,7 @@ import java.math.BigInteger;
 import java.util.Arrays;
 import lombok.Builder;
 import lombok.Data;
+import lombok.extern.slf4j.Slf4j;
 import org.ton.ton4j.cell.Cell;
 import org.ton.ton4j.cell.CellBuilder;
 import org.ton.ton4j.exporter.reader.CellDbReader;
@@ -39,6 +40,7 @@ import org.ton.ton4j.utils.Utils;
  *   = ShardStateUnsplit;
  * </pre>
  */
+@Slf4j
 @Builder
 @Data
 public class ShardStateUnsplitLazy implements Serializable {
@@ -98,6 +100,11 @@ public class ShardStateUnsplitLazy implements Serializable {
             .genLt(cs.loadUint(64))
             .minRefMCSeqno(cs.loadUint(32).longValue())
             .build(); // 360 bits
+
+    log.info(
+        "SHARD IDENT {}",
+        shardStateUnsplitLazy.getShardIdent().convertShardIdentToShard().toString(16));
+    log.info("SHARD SEQNO {}", shardStateUnsplitLazy.getSeqno());
 
     // ref1
     byte[] outMsgQueueInfoKeyHash = Utils.slice(cs.getHashes(), 0, 32);
