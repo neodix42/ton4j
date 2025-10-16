@@ -694,7 +694,7 @@ public class TestExporter {
     Block lastBlock = pair.getRight();
     Address address =
         Address.of("0:b3dd5c861f4b3ff36da1996e31ef8394a83d0a5d08cfa472adc2eb804e5e849a");
-    org.ton.ton4j.tl.types.db.block.BlockIdExt shardInfo =
+    org.ton.ton4j.tlb.BlockIdExt shardInfo =
         ShardLookup.findShardBlock(lastBlock, address.wc, address.hashPart);
     log.info("shardInfo {}", shardInfo);
     ShardAccountLazy shardAccountLazy =
@@ -712,7 +712,7 @@ public class TestExporter {
     Address address =
         Address.of("-1:0000000000000000000000000000000000000000000000000000000000000000");
     // no need look
-    org.ton.ton4j.tl.types.db.block.BlockIdExt shardInfo =
+    org.ton.ton4j.tlb.BlockIdExt shardInfo =
         ShardLookup.findShardBlock(lastBlock, address.wc, address.hashPart);
     log.info("shardInfo {}", shardInfo);
     ShardAccountLazy shardAccountLazy =

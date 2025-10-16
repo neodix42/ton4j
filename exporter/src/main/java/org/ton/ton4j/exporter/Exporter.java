@@ -1311,7 +1311,7 @@ public class Exporter {
 
       // Get temp package timestamps (they are Unix timestamps)
       List<Integer> tempPackageTimestamps = mainIndex.getTempPackages();
-      log.debug("Found {} temp packages in global index", tempPackageTimestamps.size());
+      //      log.debug("Found {} temp packages in global index", tempPackageTimestamps.size());
 
       // Sort timestamps in descending order (most recent first)
       List<Integer> sortedTimestamps = new ArrayList<>(tempPackageTimestamps);
@@ -1432,6 +1432,62 @@ public class Exporter {
     }
   }
 
+  /**
+   * Return latest Block of particular wc and shard.
+   *
+   * @return The most recently added number of blocks of masterchain and any workchain.
+   * @throws IOException If an I/O error occurs while reading the database
+   */
+  public Block getLast(int wc, long shard) throws IOException {
+
+    try (GlobalIndexDbReader globalIndexReader = new GlobalIndexDbReader(tonDatabaseRootPath)) {
+      IndexValue mainIndex = globalIndexReader.getMainIndexIndexValue();
+
+      if (mainIndex == null || mainIndex.getTempPackages().isEmpty()) {
+        log.warn("No temp packages found in global index");
+        return null;
+      }
+
+      // Get temp package timestamps (they are Unix timestamps)
+      List<Integer> tempPackageTimestamps = mainIndex.getTempPackages();
+      log.debug("Found {} temp packages in global index", tempPackageTimestamps.size());
+
+      // Sort timestamps in descending order (most recent first)
+      List<Integer> sortedTimestamps = new ArrayList<>(tempPackageTimestamps);
+
+      // sort in descending order
+      sortedTimestamps.sort(Collections.reverseOrder());
+
+      // get the top (most recent, with the biggest timestamp)
+      Integer packageTimestamp = sortedTimestamps.get(0);
+      try (TempPackageIndexReader tempIndexReader =
+          new TempPackageIndexReader(tonDatabaseRootPath, packageTimestamp)) {
+        TreeMap<org.ton.ton4j.tlb.BlockIdExt, Block> lasts = tempIndexReader.getLast(10); // review
+
+        for (Map.Entry<org.ton.ton4j.tlb.BlockIdExt, Block> kv : lasts.entrySet()) {
+          if ((kv.getKey().getWorkchain() == wc) && (kv.getKey().shard == shard)) {
+            return kv.getValue();
+          }
+        }
+      }
+    }
+    return null;
+  }
+
+  public ShardAccountLazy getShardAccountByAddress(
+      org.ton.ton4j.tlb.BlockIdExt blockIdExt, Address address, boolean full) throws IOException {
+    return getShardAccountByAddress(
+        BlockIdExt.builder()
+            .shard(blockIdExt.shard)
+            .workchain(blockIdExt.getWorkchain())
+            .seqno((int) blockIdExt.getSeqno())
+            .fileHash(blockIdExt.fileHash)
+            .rootHash(blockIdExt.rootHash)
+            .build(),
+        address,
+        full);
+  }
+
   public ShardAccountLazy getShardAccountByAddress(
       BlockIdExt blockIdExt, Address address, boolean full) throws IOException {
     try (CellDbReader cellDbReader = new CellDbReader(tonDatabaseRootPath)) {
@@ -1480,8 +1536,19 @@ public class Exporter {
   BigInteger getBalance(Address address) {
     try (StateDbReader stateReader = new StateDbReader(tonDatabaseRootPath)) {
 
-      BlockIdExt lastBlockIdExt = stateReader.getLastBlockIdExt();
-      return getShardAccountByAddress(lastBlockIdExt, address, false).getBalance();
+      if (address.wc == -1) {
+        BlockIdExt lastBlockIdExt = stateReader.getLastBlockIdExt();
+        return getShardAccountByAddress(lastBlockIdExt, address, false).getBalance();
+      } else {
+        // 1. get latest block
+        // 2. extract shard hashes
+        // 3. find shard where target address is
+        // 4. query balance with that shard info
+        Block lastBlock = getLast().getValue();
+        org.ton.ton4j.tlb.BlockIdExt shardInfo =
+            ShardLookup.findShardBlock(lastBlock, address.wc, address.hashPart);
+        return getShardAccountByAddress(shardInfo, address, false).getBalance();
+      }
 
     } catch (IOException e) {
       throw new RuntimeException(e);
@@ -1491,12 +1558,26 @@ public class Exporter {
   BigInteger getBalance(Address address, long seqno) {
     try (StateDbReader ignored = new StateDbReader(tonDatabaseRootPath)) {
 
-      BlockId blockId =
-          BlockId.builder().workchain(-1).shard(0x8000000000000000L).seqno(seqno).build();
+      if (address.wc == -1) {
+        BlockId blockId =
+            BlockId.builder().workchain(-1).shard(0x8000000000000000L).seqno(seqno).build();
+        BlockIdExt lastBlockIdExt = getBlockIdExt(blockId);
+        return getShardAccountByAddress(lastBlockIdExt, address, false).getBalance();
+      } else {
 
-      BlockIdExt lastBlockIdExt = getBlockIdExt(blockId);
-      return getShardAccountByAddress(lastBlockIdExt, address, false).getBalance();
-
+        //        BlockId blockId =
+        //            BlockId.builder()
+        //                .workchain(address.wc)
+        //                .shard(address.getShardAsLong())
+        //                .seqno(seqno)
+        //                .build();
+        BlockId blockId =
+            BlockId.builder().workchain(-1).shard(0x8000000000000000L).seqno(seqno).build();
+        Block lastBlock = getBlock(blockId);
+        org.ton.ton4j.tlb.BlockIdExt shardInfo =
+            ShardLookup.findShardBlock(lastBlock, address.wc, address.hashPart);
+        return getShardAccountByAddress(shardInfo, address, false).getBalance();
+      }
     } catch (IOException e) {
       throw new RuntimeException(e);
     }
