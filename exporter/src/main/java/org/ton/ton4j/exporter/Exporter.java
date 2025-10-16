@@ -1533,7 +1533,7 @@ public class Exporter {
     }
   }
 
-  BigInteger getBalance(Address address) {
+  public BigInteger getBalance(Address address) {
     try (StateDbReader stateReader = new StateDbReader(tonDatabaseRootPath)) {
 
       if (address.wc == -1) {
@@ -1555,14 +1555,19 @@ public class Exporter {
     }
   }
 
-  BigInteger getBalance(Address address, long seqno) {
+  public BigInteger getBalance(Address address, long seqno) {
     try (StateDbReader ignored = new StateDbReader(tonDatabaseRootPath)) {
       BlockId blockId =
           BlockId.builder().workchain(-1).shard(0x8000000000000000L).seqno(seqno).build();
 
       if (address.wc == -1) {
         BlockIdExt lastBlockIdExt = getBlockIdExt(blockId);
-        return getShardAccountByAddress(lastBlockIdExt, address, false).getBalance();
+        ShardAccountLazy shardAccountLazy =
+            getShardAccountByAddress(lastBlockIdExt, address, false);
+        if (isNull(shardAccountLazy)) {
+          throw new RuntimeException("Could not find shard account for address " + address);
+        }
+        return shardAccountLazy.getBalance();
       } else {
         Block mcBlock = getBlock(blockId);
         org.ton.ton4j.tlb.BlockIdExt shardInfo =
@@ -1571,7 +1576,11 @@ public class Exporter {
         if (isNull(shardInfo)) {
           throw new RuntimeException("Could not find shard for address " + address);
         }
-        return getShardAccountByAddress(shardInfo, address, false).getBalance();
+        ShardAccountLazy shardAccountLazy = getShardAccountByAddress(shardInfo, address, false);
+        if (isNull(shardAccountLazy)) {
+          throw new RuntimeException("Could not find shard account for address " + address);
+        }
+        return shardAccountLazy.getBalance();
       }
     } catch (IOException e) {
       throw new RuntimeException(e);

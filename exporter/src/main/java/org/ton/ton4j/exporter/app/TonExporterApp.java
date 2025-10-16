@@ -6,11 +6,13 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintWriter;
+import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
 import java.util.Properties;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import org.apache.commons.lang3.tuple.Pair;
+import org.ton.ton4j.address.Address;
 import org.ton.ton4j.bitstring.BitString;
 import org.ton.ton4j.cell.Cell;
 import org.ton.ton4j.exporter.Exporter;
@@ -60,7 +62,7 @@ public class TonExporterApp {
       System.exit(0);
     }
 
-    if (args.length < 4) {
+    if (args.length < 2) {
       printUsage();
       System.exit(1);
     }
@@ -68,6 +70,19 @@ public class TonExporterApp {
     try {
       // Parse command line arguments
       String tonDbRootPath = args[0];
+
+      // Check if this is a balance command
+      if (args.length >= 3 && "balance".equals(args[1].toLowerCase())) {
+        handleBalanceCommand(tonDbRootPath, args);
+        return;
+      }
+
+      // Original export functionality
+      if (args.length < 4) {
+        printUsage();
+        System.exit(1);
+      }
+
       String outputDestination = args[1].toLowerCase();
       String outputFormat = args[2].toLowerCase();
       int numOfThreads = Integer.parseInt(args[3]);
@@ -414,7 +429,9 @@ public class TonExporterApp {
             writer.println(jsonOutput);
           }
         } else {
+          System.out.println("*");
           System.out.println(jsonOutput);
+          System.out.println("*");
           // When stdout AND json is specified, show additional information at the end
           System.out.printf(
               "(%s,%s,%s) txs %s, msgs %s%n",
@@ -442,12 +459,73 @@ public class TonExporterApp {
             writer.println(bocHex);
           }
         } else {
+          System.out.println("*");
           System.out.println(bocHex);
+          System.out.println("*");
         }
       }
 
     } catch (Exception e) {
       throw new IOException("Error in last mode: " + e.getMessage(), e);
+    }
+  }
+
+  /**
+   * Handles the "balance" command to query account balance.
+   *
+   * @param tonDbRootPath the path to the TON database root directory
+   * @param args the command line arguments
+   * @throws Exception if an error occurs during balance query
+   */
+  private static void handleBalanceCommand(String tonDbRootPath, String[] args) throws Exception {
+    // args[0] = ton-db-root-path
+    // args[1] = "balance"
+    // args[2] = address (required)
+    // args[3] = seqno (optional)
+
+    if (args.length < 3) {
+      System.err.println("Error: Address is required for balance command");
+      System.err.println(
+          "Usage: java -jar TonExporterApp.jar <ton-db-root-path> balance <address> [seqno]");
+      System.exit(1);
+    }
+
+    String addressStr = args[2];
+    Long seqno = null;
+
+    // Check if seqno is provided
+    if (args.length >= 4) {
+      try {
+        seqno = Long.parseLong(args[3]);
+      } catch (NumberFormatException e) {
+        System.err.println("Error: Invalid seqno format. Must be a number.");
+        System.exit(1);
+      }
+    }
+
+    try {
+      // Create exporter instance
+      Exporter exporter =
+          Exporter.builder().tonDatabaseRootPath(tonDbRootPath).showProgress(false).build();
+
+      // Parse address
+      Address address = Address.of(addressStr);
+
+      // Get balance
+      BigInteger balance;
+      if (seqno == null) {
+        balance = exporter.getBalance(address);
+      } else {
+        balance = exporter.getBalance(address, seqno);
+      }
+
+      // Print balance to stdout
+      System.out.println(balance);
+
+    } catch (Exception e) {
+      System.err.println("Error querying balance: " + e.getMessage());
+      e.printStackTrace();
+      System.exit(1);
     }
   }
 
@@ -476,6 +554,8 @@ public class TonExporterApp {
         "  For file output: java -jar TonExporterApp.jar <ton-db-root-path> file <json|boc> <num-of-threads> <true|false> <output-file-name> [last]");
     System.err.println(
         "  For stdout output: java -jar TonExporterApp.jar <ton-db-root-path> stdout <json|boc> <num-of-threads> [<true|false>] [last]");
+    System.err.println(
+        "  For balance query: java -jar TonExporterApp.jar <ton-db-root-path> balance <address> [seqno]");
     System.err.println();
     System.err.println("Arguments:");
     System.err.println("  -v                : Show version information");
@@ -489,6 +569,9 @@ public class TonExporterApp {
         "  output-file-name : Name of the output file (required only for file output)");
     System.err.println(
         "  last             : Optional flag to get only the last block (ignores progress and uses 1 thread)");
+    System.err.println("  balance          : Query account balance");
+    System.err.println("  address          : TON address in string format (required for balance)");
+    System.err.println("  seqno            : Block sequence number (optional for balance)");
     System.err.println();
     System.err.println("Last Mode:");
     System.err.println("  When 'last' is specified as the final argument:");
@@ -498,6 +581,12 @@ public class TonExporterApp {
     System.err.println(
         "  - For stdout + json: additional info is shown (seqno, transactions count, messages count)");
     System.err.println();
+    System.err.println("Balance Mode:");
+    System.err.println("  Query account balance from the TON database:");
+    System.err.println("  - Without seqno: returns current balance");
+    System.err.println("  - With seqno: returns balance at specified masterchain block");
+    System.err.println("  - Balance is printed to stdout as a number");
+    System.err.println();
     System.err.println("Examples:");
     System.err.println("  java -jar TonExporterApp.jar -v");
     System.err.println(
@@ -506,5 +595,7 @@ public class TonExporterApp {
     System.err.println(
         "  java -jar TonExporterApp.jar /var/ton-work/db file json 1 false last_block.json last");
     System.err.println("  java -jar TonExporterApp.jar /var/ton-work/db stdout json 1 last");
+    System.err.println("  java -jar TonExporterApp.jar /var/ton-work/db balance EQD...");
+    System.err.println("  java -jar TonExporterApp.jar /var/ton-work/db balance EQD... 12345678");
   }
 }

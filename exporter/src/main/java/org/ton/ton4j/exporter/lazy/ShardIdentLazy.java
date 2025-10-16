@@ -13,7 +13,7 @@ import org.ton.ton4j.cell.CellBuilder;
  *
  * <pre>
  * shard_ident$00
- *  shard_pfx_bits:(#<= 60)
+ *  shard_pfx_bits:(#&lt;= 60)
  *  workchain_id:int32
  *  shard_prefix:uint64
  *  = ShardIdent;

@@ -197,8 +197,8 @@ public class TonHashMapLazy implements Serializable {
   }
 
   /**
-   * Serialize HashMap label hml_short$0 {m:#} {n:#} len:(Unary ~n) {n <= m} s:(n * Bit) = HmLabel
-   * ~n m; hml_long$10 {m:#} n:(#<= m) s:(n * Bit) = HmLabel ~n m; hml_same$11 {m:#} v:Bit n:(#<= m)
+   * Serialize HashMap label hml_short$0 {m:#} {n:#} len:(Unary ~n) {n &lt;= m} s:(n * Bit) = HmLabel
+   * ~n m; hml_long$10 {m:#} n:(#&lt;= m) s:(n * Bit) = HmLabel ~n m; hml_same$11 {m:#} v:Bit n:(#&lt;= m)
    * = HmLabel ~n m;
    *
    * @param label String label string of zeroes and ones "010101"
