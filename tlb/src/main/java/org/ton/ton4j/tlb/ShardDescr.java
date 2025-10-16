@@ -78,6 +78,11 @@ public class ShardDescr implements Serializable {
   FutureSplitMerge splitMergeAt;
   CurrencyCollection feesCollected;
   CurrencyCollection fundsCreated;
+  
+  // Computed field: shard ID derived from BinTree position
+  // This is not part of the TLB schema but computed during traversal
+  @Builder.Default
+  public long computedShardId = 0x8000000000000000L;
 
   private String getMagic() {
     return Long.toHexString(magic);

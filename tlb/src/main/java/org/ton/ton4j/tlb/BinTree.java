@@ -85,7 +85,8 @@ public class BinTree implements Serializable {
 
   public List<ShardDescr> toList() {
     List<ShardDescr> list = new ArrayList<>();
-    addToList(this, list);
+    // Start with root shard ID: 0x8000000000000000
+    addToListWithShardId(this, list, 0x8000000000000000L, 0);
     return list;
   }
 
@@ -100,5 +101,42 @@ public class BinTree implements Serializable {
 
     addToList(node.left, list);
     addToList(node.right, list);
+  }
+
+  /**
+   * Traverses the BinTree and computes shard IDs based on the tree structure.
+   * The shard ID is computed by tracking the path through the tree:
+   * - Root starts at 0x8000000000000000
+   * - Going left subtracts delta, going right adds delta
+   * - Delta = 0x4000000000000000 >> depth
+   *
+   * @param node Current node
+   * @param list Result list
+   * @param shardId Current shard ID
+   * @param depth Current depth in the tree
+   */
+  private void addToListWithShardId(BinTree node, List<ShardDescr> list, long shardId, int depth) {
+    if (node == null) {
+      return;
+    }
+
+    if (node.value != null) {
+      // Set the computed shard ID
+      node.value.setComputedShardId(shardId);
+      list.add(node.value);
+    }
+
+    // Compute delta for child nodes
+    long delta = 0x4000000000000000L >>> depth;
+
+    // Traverse left subtree (subtract delta)
+    if (node.left != null) {
+      addToListWithShardId(node.left, list, shardId - delta, depth + 1);
+    }
+
+    // Traverse right subtree (add delta)
+    if (node.right != null) {
+      addToListWithShardId(node.right, list, shardId + delta, depth + 1);
+    }
   }
 }

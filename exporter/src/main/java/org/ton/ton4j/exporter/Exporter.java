@@ -1557,25 +1557,20 @@ public class Exporter {
 
   BigInteger getBalance(Address address, long seqno) {
     try (StateDbReader ignored = new StateDbReader(tonDatabaseRootPath)) {
+      BlockId blockId =
+          BlockId.builder().workchain(-1).shard(0x8000000000000000L).seqno(seqno).build();
 
       if (address.wc == -1) {
-        BlockId blockId =
-            BlockId.builder().workchain(-1).shard(0x8000000000000000L).seqno(seqno).build();
         BlockIdExt lastBlockIdExt = getBlockIdExt(blockId);
         return getShardAccountByAddress(lastBlockIdExt, address, false).getBalance();
       } else {
-
-        //        BlockId blockId =
-        //            BlockId.builder()
-        //                .workchain(address.wc)
-        //                .shard(address.getShardAsLong())
-        //                .seqno(seqno)
-        //                .build();
-        BlockId blockId =
-            BlockId.builder().workchain(-1).shard(0x8000000000000000L).seqno(seqno).build();
-        Block lastBlock = getBlock(blockId);
+        Block mcBlock = getBlock(blockId);
         org.ton.ton4j.tlb.BlockIdExt shardInfo =
-            ShardLookup.findShardBlock(lastBlock, address.wc, address.hashPart);
+            ShardLookup.findShardBlock(mcBlock, address.wc, address.hashPart);
+
+        if (isNull(shardInfo)) {
+          throw new RuntimeException("Could not find shard for address " + address);
+        }
         return getShardAccountByAddress(shardInfo, address, false).getBalance();
       }
     } catch (IOException e) {
