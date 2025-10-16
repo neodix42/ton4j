@@ -68,7 +68,7 @@ public class StateDbReader implements Closeable {
     try {
 
       stateRocksDb = new RocksDbWrapper(stateDbPath);
-      log.debug("Opened RocksDB state database at: {}", stateDbPath);
+      //      log.debug("Opened RocksDB state database at: {}", stateDbPath);
 
     } catch (IOException e) {
       throw new RuntimeException(e);
@@ -97,7 +97,7 @@ public class StateDbReader implements Closeable {
         if (info != null) {
           info.filePath = stateFile.toString();
           stateFiles.put(filename, info);
-          log.debug("Discovered state file: {} -> {}", filename, info);
+          //          log.debug("Discovered state file: {} -> {}", filename, info);
         } else {
           log.warn("Could not parse state filename: {}", filename);
         }
@@ -106,7 +106,7 @@ public class StateDbReader implements Closeable {
       }
     }
 
-    log.info("Discovered {} state files in {}", stateFiles.size(), statesPath);
+    //    log.info("Discovered {} state files in {}", stateFiles.size(), statesPath);
   }
 
   /**
@@ -373,6 +373,6 @@ public class StateDbReader implements Closeable {
       stateDbOptions.close();
       stateDbOptions = null;
     }
-    log.debug("StateDbReader closed");
+    //    log.debug("StateDbReader closed");
   }
 }

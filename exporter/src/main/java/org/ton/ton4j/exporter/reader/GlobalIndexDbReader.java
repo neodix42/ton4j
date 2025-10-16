@@ -705,7 +705,7 @@ public class GlobalIndexDbReader implements Closeable {
     AtomicInteger maximum = new AtomicInteger();
     globalIndexDb.forEach(
         (key, value) -> {
-          GlobalIndexKey globalIndexKey = GlobalIndexKey.deserialize(key);
+          //          GlobalIndexKey globalIndexKey = GlobalIndexKey.deserialize(key);
           GlobalIndexValue globalIndexValue = GlobalIndexValue.deserialize(value);
 
           if (globalIndexValue instanceof PackageValue) {
@@ -717,7 +717,7 @@ public class GlobalIndexDbReader implements Closeable {
                 if (firstBlock.getSeqno() > maximum.get()) {
                   maximum.set(firstBlock.getSeqno());
                 }
-                if (firstBlock.getSeqno() < seqno) {
+                if (firstBlock.getSeqno() <= seqno) {
                   if (foundPackageId.get() < ((PackageValue) globalIndexValue).getPackageId()) {
                     foundPackageId.set(((PackageValue) globalIndexValue).getPackageId());
                   }

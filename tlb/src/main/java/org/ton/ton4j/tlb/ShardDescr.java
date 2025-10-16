@@ -63,8 +63,8 @@ public class ShardDescr implements Serializable {
   long regMcSeqno;
   BigInteger startLt;
   BigInteger endLt;
-  BigInteger rootHash;
-  BigInteger fileHash;
+  public BigInteger rootHash;
+  public BigInteger fileHash;
   boolean beforeSplit;
   boolean beforeMerge;
   boolean wantSplit;
@@ -72,7 +72,7 @@ public class ShardDescr implements Serializable {
   boolean nXCCUpdated;
   int flags;
   long nextCatchainSeqNo;
-  BigInteger nextValidatorShard;
+  public BigInteger nextValidatorShard;
   long minRefMcSeqNo;
   long genUTime;
   FutureSplitMerge splitMergeAt;

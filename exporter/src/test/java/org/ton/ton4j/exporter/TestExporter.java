@@ -195,6 +195,21 @@ public class TestExporter {
   }
 
   @Test
+  public void testExporterGetBlockByBlockId220000() throws IOException {
+    long startTime = System.currentTimeMillis();
+
+    BlockId blockIdMc =
+        BlockId.builder().workchain(-1).seqno(220000).shard(0x8000000000000000L).build();
+
+    Exporter exporter = Exporter.builder().tonDatabaseRootPath(TON_DB_ROOT_PATH).build();
+
+    Block block = exporter.getBlock(blockIdMc);
+    long endTime = System.currentTimeMillis();
+    log.info("block {}", block);
+    log.info("elapsed time: {} ms", endTime - startTime);
+  }
+
+  @Test
   public void testExporterGetBlockByBlockIdNonMc() throws IOException {
     long startTime = System.currentTimeMillis();
     BlockId blockId =
@@ -240,6 +255,13 @@ public class TestExporter {
     log.info("blockGson: {}", gson.toJson(latestBlock));
 
     log.info("shards: {}", latestBlock.getAllShardDescrs());
+  }
+
+  @Test
+  public void testExporterGetLastByWcShard() throws IOException {
+    Exporter exporter = Exporter.builder().tonDatabaseRootPath(TON_DB_ROOT_PATH).build();
+    Block last = exporter.getLast(0, 0x8000000000000000L);
+    log.info("last block: {}", last);
   }
 
   @Test
@@ -531,22 +553,15 @@ public class TestExporter {
     for (Address address :
         List.of(
             // adnl 777998095999, our algo finds nok - error "not a prefix"
-            //
-            // Address.of("0:b3dd5c861f4b3ff36da1996e31ef8394a83d0a5d08cfa472adc2eb804e5e849a"),
+            Address.of("0:b3dd5c861f4b3ff36da1996e31ef8394a83d0a5d08cfa472adc2eb804e5e849a"),
             // adnl 6007998, our algo finds ok
-            Address.of("0:b3dd5e92a9c3a05a56930db015a7a35b07546ecf1f5fa425fd3d8e6a63fd28ea")
+            Address.of("0:b3dd5e92a9c3a05a56930db015a7a35b07546ecf1f5fa425fd3d8e6a63fd28ea"),
             // adnl 777998095999, our algo finds nok - error "not a prefix"
-            //
-            // Address.of("0:7216e9db71acddecba3944137540c400f11fbabebeb23138fa5535c6a8784f2c")
-            )) {
-      ShardAccountLazy shardAccount =
-          exporter.getShardAccountByAddress(blockIdExtMc, address, false);
-      if (nonNull(shardAccount)) {
-        log.info("shardAccount {}", shardAccount);
-        log.info("shardAccount.balance {}", Utils.formatNanoValue(shardAccount.getBalance()));
-      } else {
-        log.info("shardAccount {} of address {}", shardAccount, address.toRaw());
-      }
+            Address.of("0:7216e9db71acddecba3944137540c400f11fbabebeb23138fa5535c6a8784f2c"))) {
+      //      ShardAccountLazy shardAccount =
+      //          exporter.getShardAccountByAddress(blockIdExtMc, address, false);
+
+      log.info("shardAccount balance {}", Utils.formatNanoValue(exporter.getBalance(address)));
     }
   }
 
@@ -569,15 +584,7 @@ public class TestExporter {
             Address.of("-1:22f53b7d9aba2cef44755f7078b01614cd4dde2388a1729c2c386cf8f9898afe"),
             // adnl 669343021899572, our - not found
             Address.of("-1:6744e92c6f71c776fbbcef299e31bf76f39c245cd56f2075b89c6a22026b4131"))) {
-      ShardAccountLazy shardAccount =
-          exporter.getShardAccountByAddress(blockIdExtMc, address, false);
-
-      if (nonNull(shardAccount)) {
-        log.info("shardAccount {}", shardAccount);
-        log.info("shardAccount.balance {}", Utils.formatNanoValue(shardAccount.getBalance()));
-      } else {
-        log.info("shardAccount {} of address {}", shardAccount, address.toRaw());
-      }
+      log.info("shardAccount balance {}", Utils.formatNanoValue(exporter.getBalance(address)));
     }
   }
 
@@ -639,7 +646,7 @@ public class TestExporter {
   @Test
   public void testCellDbReaderGetBalanceLatestWc() {
     Address address =
-        Address.of("0:b3dd5e92a9c3a05a56930db015a7a35b07546ecf1f5fa425fd3d8e6a63fd28ea");
+        Address.of("0:7216e9db71acddecba3944137540c400f11fbabebeb23138fa5535c6a8784f2c");
     Exporter exporter = Exporter.builder().tonDatabaseRootPath(TON_DB_ROOT_PATH).build();
     log.info("Balance {}", Utils.formatNanoValue(exporter.getBalance(address)));
   }
@@ -647,8 +654,8 @@ public class TestExporter {
   @Test
   public void testCellDbReaderGetBalanceBySeqnoWc() {
     Address address =
-        Address.of("0:b3dd5e92a9c3a05a56930db015a7a35b07546ecf1f5fa425fd3d8e6a63fd28ea");
-    long mcSeqno = 22000;
+        Address.of("0:7216e9db71acddecba3944137540c400f11fbabebeb23138fa5535c6a8784f2c");
+    long mcSeqno = 220000;
     Exporter exporter = Exporter.builder().tonDatabaseRootPath(TON_DB_ROOT_PATH).build();
     log.info("Balance {}", Utils.formatNanoValue(exporter.getBalance(address, mcSeqno)));
   }
@@ -665,8 +672,51 @@ public class TestExporter {
   public void testCellDbReaderGetBalanceBySeqno() {
     Address address =
         Address.of("-1:0000000000000000000000000000000000000000000000000000000000000000");
-    long mcSeqno = 22000;
+    long mcSeqno = 220000;
     Exporter exporter = Exporter.builder().tonDatabaseRootPath(TON_DB_ROOT_PATH).build();
     log.info("Balance {}", Utils.formatNanoValue(exporter.getBalance(address, mcSeqno)));
+  }
+
+  @Test
+  public void testCellDbReaderGetBalanceBySeqnoE() {
+    Address address =
+        Address.of("-1:3333333333333333333333333333333333333333333333333333333333333333");
+    long mcSeqno = 220000;
+    Exporter exporter = Exporter.builder().tonDatabaseRootPath(TON_DB_ROOT_PATH).build();
+    log.info("Balance {}", Utils.formatNanoValue(exporter.getBalance(address, mcSeqno)));
+  }
+
+  @Test
+  public void testShardLookUpWc() throws IOException {
+    Exporter exporter = Exporter.builder().tonDatabaseRootPath(TON_DB_ROOT_PATH).build();
+    Pair<org.ton.ton4j.tlb.BlockIdExt, Block> pair = exporter.getLast();
+    log.info("blockIdExt {}", pair.getLeft());
+    Block lastBlock = pair.getRight();
+    Address address =
+        Address.of("0:b3dd5c861f4b3ff36da1996e31ef8394a83d0a5d08cfa472adc2eb804e5e849a");
+    org.ton.ton4j.tl.types.db.block.BlockIdExt shardInfo =
+        ShardLookup.findShardBlock(lastBlock, address.wc, address.hashPart);
+    log.info("shardInfo {}", shardInfo);
+    ShardAccountLazy shardAccountLazy =
+        exporter.getShardAccountByAddress(shardInfo, address, false);
+    log.info("shardAccountLazy {}", shardAccountLazy);
+  }
+
+  @Test
+  public void testShardLookUp() throws IOException {
+    Exporter exporter = Exporter.builder().tonDatabaseRootPath(TON_DB_ROOT_PATH).build();
+    Pair<org.ton.ton4j.tlb.BlockIdExt, Block> pair = exporter.getLast();
+    BlockIdExt blockIdExt = pair.getLeft();
+    log.info("blockIdExt {}", blockIdExt);
+    Block lastBlock = pair.getRight();
+    Address address =
+        Address.of("-1:0000000000000000000000000000000000000000000000000000000000000000");
+    // no need look
+    org.ton.ton4j.tl.types.db.block.BlockIdExt shardInfo =
+        ShardLookup.findShardBlock(lastBlock, address.wc, address.hashPart);
+    log.info("shardInfo {}", shardInfo);
+    ShardAccountLazy shardAccountLazy =
+        exporter.getShardAccountByAddress(blockIdExt, address, false);
+    log.info("shardAccountLazy {}", shardAccountLazy);
   }
 }

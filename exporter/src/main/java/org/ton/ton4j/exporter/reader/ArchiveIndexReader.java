@@ -193,8 +193,11 @@ public class ArchiveIndexReader implements Closeable {
   public BlockIdExt getBlockIdExtByDbLtDescKey(DbLtDescKey dbLtDescKey, long seqno)
       throws IOException {
 
-    DbLtDescValue dbLtDescValue =
-        DbLtDescValue.deserialize(ByteBuffer.wrap(indexDb.get(dbLtDescKey.serialize())));
+    byte[] value = indexDb.get(dbLtDescKey.serialize());
+    if (value == null) {
+      throw new RuntimeException("Can't find DbLtDescValue by " + dbLtDescKey);
+    }
+    DbLtDescValue dbLtDescValue = DbLtDescValue.deserialize(ByteBuffer.wrap(value));
 
     for (int i = dbLtDescValue.getFirstIdx(); i < dbLtDescValue.getLastIdx(); i++) {
       DbLtElKey dbLtElKey =
@@ -215,7 +218,7 @@ public class ArchiveIndexReader implements Closeable {
             .build();
       }
     }
-    return null;
+    throw new RuntimeException("Can't find DbLtElValue in ArchiveIndex for seqno " + seqno);
   }
 
   /**
