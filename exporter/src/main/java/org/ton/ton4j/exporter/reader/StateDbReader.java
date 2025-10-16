@@ -99,7 +99,7 @@ public class StateDbReader implements Closeable {
           stateFiles.put(filename, info);
           //          log.debug("Discovered state file: {} -> {}", filename, info);
         } else {
-          log.warn("Could not parse state filename: {}", filename);
+          //          log.warn("Could not parse state filename: {}", filename);
         }
       } catch (Exception e) {
         log.warn("Error processing state file {}: {}", stateFile, e.getMessage());

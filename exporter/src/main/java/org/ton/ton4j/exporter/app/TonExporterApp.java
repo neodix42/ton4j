@@ -520,7 +520,7 @@ public class TonExporterApp {
       }
 
       // Print balance to stdout
-      System.out.println(balance);
+      System.out.println(balance + " (" + Utils.formatNanoValue(balance) + ")");
 
     } catch (Exception e) {
       System.err.println("Error querying balance: " + e.getMessage());

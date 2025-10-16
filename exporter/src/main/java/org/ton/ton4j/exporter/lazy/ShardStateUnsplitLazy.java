@@ -102,9 +102,9 @@ public class ShardStateUnsplitLazy implements Serializable {
             .build(); // 360 bits
 
     log.info(
-        "SHARD IDENT {}",
-        shardStateUnsplitLazy.getShardIdent().convertShardIdentToShard().toString(16));
-    log.info("SHARD SEQNO {}", shardStateUnsplitLazy.getSeqno());
+        "looking in {}:{}",
+        shardStateUnsplitLazy.getShardIdent().convertShardIdentToShard().toString(16),
+        shardStateUnsplitLazy.getSeqno());
 
     // ref1
     byte[] outMsgQueueInfoKeyHash = Utils.slice(cs.getHashes(), 0, 32);
