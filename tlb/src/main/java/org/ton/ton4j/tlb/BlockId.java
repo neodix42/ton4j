@@ -22,7 +22,6 @@ import org.ton.ton4j.cell.CellSlice;
 public class BlockId implements Serializable {
   int workchain;
   public long shard;
-  //    ShardIdent shardId;
   long seqno;
 
   public String getShard() {
@@ -31,7 +30,6 @@ public class BlockId implements Serializable {
 
   public Cell toCell() {
     return CellBuilder.beginCell()
-        //                .storeCell(shardId.toCell())
         .storeInt(workchain, 32)
         .storeUint(shard, 64)
         .storeUint(seqno, 32)
@@ -42,8 +40,6 @@ public class BlockId implements Serializable {
     return BlockId.builder()
         .workchain(cs.loadInt(32).intValue())
         .shard(cs.loadUint(64).longValue())
-        //                        .shardId((ShardIdent) cs.loadTlb(ShardIdent.class)) // todo weird
-        // - this does not work
         .seqno(cs.loadUint(32).longValue())
         .build();
   }

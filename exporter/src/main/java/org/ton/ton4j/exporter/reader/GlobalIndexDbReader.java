@@ -95,12 +95,6 @@ public class GlobalIndexDbReader implements Closeable {
               if (globalKey instanceof IndexKey) {
                 mainIndexIndexValue = (IndexValue) GlobalIndexValue.deserialize(value);
 
-                //                log.info(
-                //                    "Loaded Files database main index: {} packages, {} key
-                // packages, {} temp packages",
-                //                    mainIndexIndexValue.getPackages().size(),
-                //                    mainIndexIndexValue.getKeyPackages().size(),
-                //                    mainIndexIndexValue.getTempPackages().size());
                 found.set(true);
               }
             } catch (Exception e) {
@@ -153,12 +147,11 @@ public class GlobalIndexDbReader implements Closeable {
 
               try {
                 PackageReader packageReader = getPackageReader(archiveInfo.getPackagePath());
-                Object entryObj = packageReader.getEntryAt(offset);
+                PackageReader.PackageEntry entryObj = packageReader.getEntryAt(offset);
 
-                if (entryObj instanceof PackageReader.PackageEntry) {
-                  PackageReader.PackageEntry entry = (PackageReader.PackageEntry) entryObj;
-                  if (entry.getFilename().startsWith("block_")) {
-                    blocks.put(hash, entry.getData());
+                if (entryObj != null) {
+                  if (entryObj.getFilename().startsWith("block_")) {
+                    blocks.put(hash, entryObj.getData());
                   }
                 }
               } catch (IOException e) {

@@ -45,6 +45,6 @@ public class TestPerformanceAdnlTonlibExporter {
   @Test
   public void testPerformanceTonlib() throws Exception {
 
-    // tonlib does not have a method to return the whole deserialized Block
+    // tonlib does not have a method that returns the whole deserialized Block
   }
 }

@@ -80,8 +80,9 @@ public class ShardStateUnsplitLazy implements Serializable {
         .endCell();
   }
 
-  public static ShardStateUnsplitLazy deserialize(
-      CellDbReader cellDb, CellSliceLazy cs, boolean full) throws IOException {
+  /** prepares only root cell of ShardAccounts, other 3 refs are ignored */
+  public static ShardStateUnsplitLazy deserialize(CellDbReader cellDb, CellSliceLazy cs)
+      throws IOException {
     if (cs.isExotic()) {
       return ShardStateUnsplitLazy.builder().build();
     }
@@ -110,9 +111,10 @@ public class ShardStateUnsplitLazy implements Serializable {
     byte[] outMsgQueueInfoKeyHash = Utils.slice(cs.getHashes(), 0, 32);
     cs.hashes = Arrays.copyOfRange(cs.getHashes(), 32, cs.getHashes().length);
 
-    Cell outMsgQueueInfoCell = cs.getRefByHash(outMsgQueueInfoKeyHash);
-    shardStateUnsplitLazy.setOutMsgQueueInfo(
-        OutMsgQueueInfoLazy.deserialize(CellSliceLazy.beginParse(cellDb, outMsgQueueInfoCell)));
+    //    Cell outMsgQueueInfoCell = cs.getRefByHash(outMsgQueueInfoKeyHash);
+    //    shardStateUnsplitLazy.setOutMsgQueueInfo(
+    //        OutMsgQueueInfoLazy.deserialize(CellSliceLazy.beginParse(cellDb,
+    // outMsgQueueInfoCell)));
 
     shardStateUnsplitLazy.setBeforeSplit(cs.loadBit());
 
@@ -122,13 +124,8 @@ public class ShardStateUnsplitLazy implements Serializable {
 
     Cell shardAccountsCell = cs.getRefByHash(shardAccountsKeyHash);
 
-    if (full) {
-      shardStateUnsplitLazy.setShardAccounts(
-          ShardAccountsLazy.deserialize(CellSliceLazy.beginParse(cellDb, shardAccountsCell)));
-    } else {
-      shardStateUnsplitLazy.setShardAccounts(
-          ShardAccountsLazy.prepare(CellSliceLazy.beginParse(cellDb, shardAccountsCell)));
-    }
+    shardStateUnsplitLazy.setShardAccounts(
+        ShardAccountsLazy.prepare(CellSliceLazy.beginParse(cellDb, shardAccountsCell)));
 
     // ref3
     //    shardStateUnsplit.setShardStateInfo(

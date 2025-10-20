@@ -108,11 +108,6 @@ public class Exporter {
       if (isNull(super.tonDatabaseRootPath)) {
         throw new Error("tonDatabaseRootPath is null");
       }
-      try {
-        dbReader = new DbReader(super.tonDatabaseRootPath);
-      } catch (IOException e) {
-        throw new RuntimeException(e);
-      }
 
       if (isNull(super.showProgress)) {
         super.showProgress = false;
@@ -1191,6 +1186,9 @@ public class Exporter {
 
     BlockFileKey blockFileKey = BlockFileKey.builder().blockIdExt(blockIdExt).build();
     //    log.info("key hash {}", blockFileKey.getKeyHash());
+    if (dbReader == null) {
+      dbReader = new DbReader(tonDatabaseRootPath);
+    }
     int archiveIndex =
         dbReader
             .getGlobalIndexDbReader()
@@ -1230,6 +1228,10 @@ public class Exporter {
 
     DbLtDescKey keyHash =
         DbLtDescKey.builder().workchain(blockId.getWorkchain()).shard(blockId.shard).build();
+
+    if (dbReader == null) {
+      dbReader = new DbReader(tonDatabaseRootPath);
+    }
 
     int archiveIndex =
         dbReader
@@ -1475,7 +1477,7 @@ public class Exporter {
   }
 
   public ShardAccountLazy getShardAccountByAddress(
-      org.ton.ton4j.tlb.BlockIdExt blockIdExt, Address address, boolean full) throws IOException {
+      org.ton.ton4j.tlb.BlockIdExt blockIdExt, Address address) throws IOException {
     return getShardAccountByAddress(
         BlockIdExt.builder()
             .shard(blockIdExt.shard)
@@ -1484,43 +1486,38 @@ public class Exporter {
             .fileHash(blockIdExt.fileHash)
             .rootHash(blockIdExt.rootHash)
             .build(),
-        address,
-        full);
+        address);
   }
 
-  public ShardAccountLazy getShardAccountByAddress(
-      BlockIdExt blockIdExt, Address address, boolean full) throws IOException {
+  public ShardAccountLazy getShardAccountByAddress(BlockIdExt blockIdExt, Address address)
+      throws IOException {
     try (CellDbReader cellDbReader = new CellDbReader(tonDatabaseRootPath)) {
       String key = "desc" + Utils.bytesToBase64(Utils.sha256AsArray(blockIdExt.serializeBoxed()));
       byte[] value = cellDbReader.getCellDb().get(key.getBytes());
-      //      log.info("key: {}, value: {}", key, Utils.bytesToHex(value));
 
       CellDbValue cellDbValue = CellDbValue.deserialize(ByteBuffer.wrap(value));
-      //      log.info("cellDbValue: {}", cellDbValue);
       byte[] shardStateRootHash = cellDbValue.rootHash;
 
       // find full cell containing ShardStateUnsplit by shardStateRootHash
       byte[] rawShardStateUnsplit = cellDbReader.getCellDb().get(shardStateRootHash);
-      // log.info("rawShardStateUnsplit: {}", Utils.bytesToHex(rawShardStateUnsplit)); // top cell
 
       Cell shardStateCell = parseCell(ByteBuffer.wrap(rawShardStateUnsplit));
-      //      log.info("getMaxLevel: {}, getDepthLevels: {}", c.getMaxLevel(), c.getDepthLevels());
 
+      // looking in
       ShardStateUnsplitLazy shardStateUnsplitLazy =
           ShardStateUnsplitLazy.deserialize(
-              cellDbReader, CellSliceLazy.beginParse(cellDbReader, shardStateCell), full);
+              cellDbReader, CellSliceLazy.beginParse(cellDbReader, shardStateCell));
 
-      if (full) {
-        return shardStateUnsplitLazy.getShardAccounts().getShardAccountByAddressFull(address);
-      } else {
-        return shardStateUnsplitLazy.getShardAccounts().lookup(address);
-      }
+      return shardStateUnsplitLazy.getShardAccounts().lookup(address);
     }
   }
 
   public BlockIdExt getBlockIdExt(BlockId blockId) throws IOException {
     DbLtDescKey keyHash =
         DbLtDescKey.builder().workchain(blockId.getWorkchain()).shard(blockId.shard).build();
+    if (dbReader == null) {
+      dbReader = new DbReader(tonDatabaseRootPath);
+    }
     int archiveIndex =
         dbReader
             .getGlobalIndexDbReader()
@@ -1538,7 +1535,7 @@ public class Exporter {
 
       if (address.wc == -1) {
         BlockIdExt lastBlockIdExt = stateReader.getLastBlockIdExt();
-        return getShardAccountByAddress(lastBlockIdExt, address, false).getBalance();
+        return getShardAccountByAddress(lastBlockIdExt, address).getBalance();
       } else {
         // 1. get latest block
         // 2. extract shard hashes
@@ -1547,7 +1544,7 @@ public class Exporter {
         Block lastBlock = getLast().getValue();
         org.ton.ton4j.tlb.BlockIdExt shardInfo =
             ShardLookup.findShardBlock(lastBlock, address.wc, address.hashPart);
-        return getShardAccountByAddress(shardInfo, address, false).getBalance();
+        return getShardAccountByAddress(shardInfo, address).getBalance();
       }
 
     } catch (IOException e) {
@@ -1562,8 +1559,7 @@ public class Exporter {
 
       if (address.wc == -1) {
         BlockIdExt lastBlockIdExt = getBlockIdExt(blockId);
-        ShardAccountLazy shardAccountLazy =
-            getShardAccountByAddress(lastBlockIdExt, address, false);
+        ShardAccountLazy shardAccountLazy = getShardAccountByAddress(lastBlockIdExt, address);
         if (isNull(shardAccountLazy)) {
           throw new RuntimeException("Could not find shard account for address " + address);
         }
@@ -1576,7 +1572,7 @@ public class Exporter {
         if (isNull(shardInfo)) {
           throw new RuntimeException("Could not find shard for address " + address);
         }
-        ShardAccountLazy shardAccountLazy = getShardAccountByAddress(shardInfo, address, false);
+        ShardAccountLazy shardAccountLazy = getShardAccountByAddress(shardInfo, address);
         if (isNull(shardAccountLazy)) {
           throw new RuntimeException("Could not find shard account for address " + address);
         }

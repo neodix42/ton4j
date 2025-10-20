@@ -33,6 +33,10 @@ Mainly `Exporter` class suggests following methods:
  - `getLast()` and `getLast(X)` - used to get very last block or list of last blocks limited by X.
  - `getBlock(BlockIdExt)` - used to get a Block of TL-B type by seqno, workchain, shard, root and file hashes. 
  - `getBlock(BlockId)` - used to get a Block of TL-B type by seqno, workchain and shard. 
+ - `getBlockIdExt(BlockId)` - used to get a BlockIdExt of TL-B type by seqno, workchain and shard. 
+ - `getShardAccountByAddress(...)` - used to get a ShardAccount of TL-B type by seqno, workchain and shard. 
+ - `getBalance(Address)` - used to get account's balance. 
+ - `getBalance(Address, long)` - used to get account's balance by address and masterchain seqno. 
 
 
 First three methods have parameters:
@@ -115,6 +119,7 @@ Usage:
   For version: java -jar TonExporterApp -v
   For file output: java -jar TonExporterApp.jar <ton-db-root-path> file <json|boc> <num-of-threads> <true|false> <output-file-name> [last]
   For stdout output: java -jar TonExporterApp.jar <ton-db-root-path> stdout <json|boc> <num-of-threads> [<true|false>] [last]
+  For balance query: java -jar TonExporterApp.jar <ton-db-root-path> balance <address> [seqno]
 
 Arguments:
   -v                : Show version information
@@ -125,6 +130,9 @@ Arguments:
   true|false       : Whether to show progress information during export
   output-file-name : Name of the output file (required only for file output)
   last             : Optional flag to get only the last block
+  balance          : Query account balance
+  address          : TON address in string format (required for balance)
+  seqno            : Block sequence number (optional for balance)                        
 
 Last Mode:
   When 'last' is specified as the final argument:
@@ -133,12 +141,21 @@ Last Mode:
   - Only the most recent block is retrieved and output
   - For stdout + json: additional info is shown (seqno, transactions count, messages count)
 
+Balance Mode:
+  Query account balance from the TON database:
+  - Without seqno: returns current balance
+  - With seqno: returns balance at specified masterchain block
+  - Balance is printed to stdout as a number
+
 Examples:
   java -jar TonExporterApp.jar -v
   java -jar TonExporterApp.jar /var/ton-work/db file json 4 true blocks.json
   java -jar TonExporterApp.jar /var/ton-work/db stdout boc 8
   java -jar TonExporterApp.jar /var/ton-work/db file json 1 false last_block.json last
   java -jar TonExporterApp.jar /var/ton-work/db stdout json 1 last
+  java -jar TonExporterApp.jar /var/ton-work/db balance EQD...
+  java -jar TonExporterApp.jar /var/ton-work/db balance EQD... 12345678
+
 ```
 
 More examples in [Exporter](../exporter/src/test/java/org/ton/ton4j/exporter) module.
