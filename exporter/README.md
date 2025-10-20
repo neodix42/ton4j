@@ -30,7 +30,8 @@ Mainly `Exporter` class suggests following methods:
  - `exportToFile()` - used to export blocks of all shards in JSON or BoC (hex format) to file. 
  - `exportToStdout()` - used to export blocks in JSON or BoC (hex format) to Stdout.
  - `exportToObjects()` - used to get access to parallel stream of all blocks of TL-B type [Block](https://github.com/ton-blockchain/ton/blob/master/crypto/block/block.tlb). 
- - `getLast()` and `getLast(X)` - used to get very last block or list of last blocks limited by X.
+ - `getLast()` and `getLast(X)` - used to get the latest block or list of last blocks limited by X.
+ - `getLast(wc,shard)` - used to get the latest block by wc and shard.
  - `getBlock(BlockIdExt)` - used to get a Block of TL-B type by seqno, workchain, shard, root and file hashes. 
  - `getBlock(BlockId)` - used to get a Block of TL-B type by seqno, workchain and shard. 
  - `getBlockIdExt(BlockId)` - used to get a BlockIdExt of TL-B type by seqno, workchain and shard. 
@@ -48,7 +49,7 @@ First three methods have parameters:
 
 Currently export to JSON is straight forward in terms that same Cells (BoCs) are duplicated accross the export file.
 This makes block in JSON format much bigger than its original BoC representation.
-For example, I found one block which BoC was 1MB size and its JSON turned to 200MB (there were about 1000 Txs where each Tx had same InitState (code+body)).
+For example, I found one block which BoC was of 1MB in size and its JSON turned to 200MB (there were about 1000 Txs where each Tx had the same InitState (code+body)).
 
 In the future, this might be optmized so export would produce a sepate file where each cell would be referenced by its hash, and that hash would be used in block as a reference.
 
@@ -83,20 +84,20 @@ For that use `RocksDbWrapper`. Below are few examples of how to traverse any Roc
 
 Cell DB traversal
 ```java
-  @Test
-  public void testCellDbReader() throws IOException {
-    RocksDbWrapper cellDb = new RocksDbWrapper(TON_ROOT_DB_PATH + "/celldb");
-    cellDb.forEach(
-        (key, value) -> {
-          log.info("key:{}, value:{}", Utils.bytesToHex(key), Utils.bytesToHex(value));
-        });
-    cellDb.close();
-  }
+@Test
+public void testCellDbReader() throws IOException {
+RocksDbWrapper cellDb = new RocksDbWrapper(TON_ROOT_DB_PATH + "/celldb");
+cellDb.forEach(
+    (key, value) -> {
+      log.info("key:{}, value:{}", Utils.bytesToHex(key), Utils.bytesToHex(value));
+    });
+cellDb.close();
+}
 ```
 
 Global Index DB traversal
 ```java
-  @Test
+@Test
 public void testGlobalIndexReading() throws IOException {
     try (RocksDbWrapper reader = new RocksDbWrapper(TON_ROOT_DB_PATH + "/files/globalindex")) {
         reader.forEach((key, value) -> {
@@ -109,6 +110,72 @@ public void testGlobalIndexReading() throws IOException {
 }
 ```
 
+## Predefined TON RockDB [readers](src/main/java/org/ton/ton4j/exporter/reader)
+
+### GlobalIndexDbReader
+Specialized [reader](org/ton/ton4j/exporter/reader/GlobalIndexDbReader.java) for TON **Files** database global index. 
+This reader focuses specifically on the Global index at `db/files/globalindex`. 
+TON **Files** database uses: 
+1. Main index entry
+   * key = db.files.index.key (empty)
+   * value = db.files.index.value (package lists)
+2. Package metadata entries
+   * key = db.files.package.key
+   * value = db.files.package.value    
+3. File hash entries 
+   * key = file hash (raw bytes)
+   * value = location data (package_id, offset, size)
+
+### ArchiveIndexReader
+[Reader](org/ton/ton4j/exporter/reader/ArchiveIndexReader.java) for individual archive index databases (archive.XXXXX.index). 
+Each archive package has a corresponding RocksDB index that contains hash-&gt;offset mappings for files within that package.
+
+The archive index database contains several special keys:
+
+1. `status` - Contains the value `"sliced"` to indicate the archive uses sliced storage.
+2. `slices` - Stores the total number of slices (as a string integer)
+3. `slice_size` - Stores the size of each slice
+4. `info.{i}` - Stores the raw package filename for slice index `i` (without `.pack` extension)
+
+### StateDbReader
+Specialized [reader](org/ton/ton4j/exporter/reader/StateDbReader.java) for TON archive state database. Handles files stored in the `archive/states` directory.
+Mostly used to get latest BlockIdExt from the TON state files. 
+
+### CellDbReader
+[Reader](org/ton/ton4j/exporter/reader/CellDbReader.java) for TON **Cell** database. The CellDB stores blockchain state cells in a RocksDB database with a linked-list structure for metadata entries.
+
+Based on the original TON C++ implementation in celldb.cpp, the CellDB uses: 
+1. Metadata entries: 
+   * key = "desc" + SHA256(TL-serialized block_id) 
+   * value = TL-serialized db.celldb.value 
+2.Special empty entry: 
+   * key = "desczero", 
+   * value = TL-serialized db.celldb.value 
+3. Cell data entries: 
+   * key = cell hash (raw bytes)
+   * value = serialized cell content 
+4. Linked list structure entries connected via prev/next pointers forming a doubly-linked list.
+
+The TL types used:
+   * db.celldb.key.value: hash:int256
+   * db.celldb.value: block_id:tonNode.blockIdExt prev:int256 next:int256 root_hash:int256 
+   
+
+### TempPackageIndexReader
+[Reader](org/ton/ton4j/exporter/reader/TempPackageIndexReader.java) for **Temp** package index databases. Each temp package (e.g., temp.archive.1756843200.pack) has a corresponding RocksDB index (temp.archive.1756843200.index) that contains hash-&gt;offset mappings for fast block lookup.
+
+Based on the original C++ implementation in archive-db.cpp, temp package indexes store:
+1. File hash entries: 
+   * key = file hash (hex string)
+   * value = offset (8 bytes, little-endian)  
+2. Status entry: 
+   * key = "status"
+   * value = package size (8 bytes, little-endian)
+
+### PackageReader
+[Used](org/ton/ton4j/exporter/reader/PackageReader.java) to parse package files (like archive.00000.pack) where each package file starts with package header `0xae8fdd01` 
+and each entry starts with entry header `0x1e8b` and follows by `filenameLength` (2 bytes), `dataSize` (4 bytes), `fileName`, `data`. 
+Where `data` is BoC as array of bytes.
 ## Usage of TonExporterApp
 
 `TonExporterApp.jar` is a standalone uber-jar application, that allows you to run exports of TON DB on your local host.  

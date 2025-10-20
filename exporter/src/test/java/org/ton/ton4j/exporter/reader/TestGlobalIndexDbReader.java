@@ -563,6 +563,17 @@ public class TestGlobalIndexDbReader {
   }
 
   @Test
+  public void testGlobalIndexReadingIndexNePreload() throws IOException {
+
+    try (GlobalIndexDbReader reader = new GlobalIndexDbReader(TON_DB_ROOT_PATH, false)) {
+      for (String path :
+          reader.getArchivePackagesFromMainIndex()) { // list pack files without their slices
+        log.info("path: {}", path);
+      }
+    }
+  }
+
+  @Test
   public void testGetAllArchivePackFilesByDirScan() throws IOException {
 
     try (GlobalIndexDbReader reader = new GlobalIndexDbReader(TON_DB_ROOT_PATH)) {

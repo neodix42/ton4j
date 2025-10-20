@@ -92,9 +92,6 @@ public class Exporter {
 
   private static DbReader dbReader;
 
-  // No thread-local GSON needed - static GSON is thread-safe for serialization
-  // Removed ThreadLocal to eliminate potential memory leaks and state accumulation
-
   public static class ExporterBuilder {}
 
   public static ExporterBuilder builder() {
@@ -209,10 +206,6 @@ public class Exporter {
     shutdownRequested = true;
     log.info("Shutdown signal sent to all worker threads...");
 
-    // MassiveBlockQueue removed - no longer needed
-    // if (blockQueue != null) {
-    //   blockQueue.shutdown(optimalWriterThreads);
-    // }
     // Shutdown processing executor
     ExecutorService processingExecutor = currentProcessingExecutor;
     if (processingExecutor != null && !processingExecutor.isShutdown()) {
@@ -307,9 +300,8 @@ public class Exporter {
    * @param showProgressInfo whether to show progress information during export
    * @param exportStatus the export status for tracking progress
    * @param errorFilePath path to the errors.txt file where error block data will be written
-   * @return array containing [parsedBlocksCounter, nonBlocksCounter, errorCounter]
    */
-  private int[] exportDataWithStatus(
+  private void exportDataWithStatus(
       OutputWriter outputWriter,
       boolean deserialized,
       int parallelThreads,
@@ -557,7 +549,9 @@ public class Exporter {
     totalNonBlocks.set(nonBlocksCounter.get());
     totalErrors.set(errorCounter.get());
 
-    return new int[] {parsedBlocksCounter.get(), nonBlocksCounter.get(), errorCounter.get()};
+    parsedBlocksCounter.get();
+    nonBlocksCounter.get();
+    errorCounter.get();
   }
 
   /**
@@ -824,31 +818,6 @@ public class Exporter {
                               }
                             });
                       }
-                      //                      if (archiveInfo.getIndexPath() == null) {
-                      //                        dbReader
-                      //                            .getArchiveDbReader()
-                      //                            .readFromFilesPackage(archiveKey, archiveInfo,
-                      // localBlocks);
-                      //                        dbReader
-                      //                            .getGlobalIndexDbReader()
-                      //                            .readFromFilesPackage(archiveKey, archiveInfo,
-                      // localBlocks);
-                      //                      } else {
-                      //                        dbReader
-                      //                            .getArchiveDbReader()
-                      //                            .readFromTraditionalArchive(archiveKey,
-                      // archiveInfo, localBlocks);
-                      //                      }
-
-                      // Convert to ExportedBlock objects and count blocks/non-blocks/errors
-                      //                      List<ExportedBlock> exportedBlocks = new
-                      // ArrayList<>();
-                      //                      int localErrors = 0;
-                      //
-                      //                      for (Map.Entry<String, byte[]> kv :
-                      // localBlocks.entrySet()) {
-                      //
-                      //                      }
 
                       // Mark package as processed and save status synchronously
                       finalExportStatus.markPackageProcessed(
@@ -995,62 +964,6 @@ public class Exporter {
     return null;
   }
 
-  //
-  //  /** Process traditional archive using streaming approach to avoid memory accumulation */
-  //  private int processTraditionalArchiveInMemory(
-  //      String archiveKey,
-  //      ArchiveInfo archiveInfo,
-  //      OutputWriter outputWriter,
-  //      boolean deserialized,
-  //      String errorFilePath,
-  //      AtomicInteger parsedBlocksCounter,
-  //      AtomicInteger nonBlocksCounter,
-  //      AtomicInteger errorCounter,
-  //      AtomicInteger sessionParsedBlocks)
-  //      throws IOException {
-  //
-  //    AtomicInteger localParsedBlocks = new AtomicInteger(0);
-  //    AtomicInteger localNonBlocks = new AtomicInteger(0);
-  //
-  //    // Use streaming PackageReader instead of loading everything into memory
-  //    try (PackageReader packageReader = new PackageReader(archiveInfo.getPackagePath())) {
-  //
-  //      // Process each entry as it's read from disk (no memory accumulation)
-  //      packageReader.forEachTyped(
-  //          entry -> {
-  //            String filename = entry.getFilename();
-  //
-  //            // Only process block files
-  //            if (filename.startsWith("block_")) {
-  //              String blockKey = extractHashFromFilename(filename);
-  //              if (blockKey != null) {
-  //                int beforeParsed = parsedBlocksCounter.get();
-  //                int beforeNonBlocks = nonBlocksCounter.get();
-  //
-  //                processBlockData(
-  //                    blockKey,
-  //                    entry.getData(),
-  //                    outputWriter,
-  //                    deserialized,
-  //                    errorFilePath,
-  //                    parsedBlocksCounter,
-  //                    nonBlocksCounter,
-  //                    errorCounter,
-  //                    sessionParsedBlocks);
-  //
-  //                // Track local increments
-  //                int afterParsed = parsedBlocksCounter.get();
-  //                int afterNonBlocks = nonBlocksCounter.get();
-  //
-  //                localParsedBlocks.addAndGet(afterParsed - beforeParsed);
-  //                localNonBlocks.addAndGet(afterNonBlocks - beforeNonBlocks);
-  //              }
-  //            }
-  //          });
-  //      return localParsedBlocks.get();
-  //    }
-  //  }
-
   /** Process individual block data with optimized performance (profiling disabled) */
   private void processBlockData(
       String blockKey,
@@ -1162,6 +1075,7 @@ public class Exporter {
     log.info("total archive packs found: {}", dbReader.getAllPackFiles().size());
   }
 
+  /** returns Block of TL-B type by wc, shard, seqno, fileHash and rootHash (TL-B BlockIdExt) */
   public Block getBlock(org.ton.ton4j.tlb.BlockIdExt blockIdExt) throws IOException {
     org.ton.ton4j.tl.types.db.block.BlockIdExt blockIdExtTl =
         org.ton.ton4j.tl.types.db.block.BlockIdExt.builder()
@@ -1174,18 +1088,9 @@ public class Exporter {
     return getBlock(blockIdExtTl);
   }
 
+  /** returns Block of TL-B type by wc, shard, seqno, fileHash and rootHash (BlockIdExt) */
   public Block getBlock(BlockIdExt blockIdExt) throws IOException {
-    //    org.ton.ton4j.tl.types.db.block.BlockIdExt blockIdExtTl =
-    //        org.ton.ton4j.tl.types.db.block.BlockIdExt.builder()
-    //            .seqno((int) blockIdExt.getSeqno())
-    //            .workchain(blockIdExt.getWorkchain())
-    //            .shard(blockIdExt.shard)
-    //            .fileHash(blockIdExt.fileHash)
-    //            .rootHash(blockIdExt.rootHash)
-    //            .build();
-
     BlockFileKey blockFileKey = BlockFileKey.builder().blockIdExt(blockIdExt).build();
-    //    log.info("key hash {}", blockFileKey.getKeyHash());
     if (dbReader == null) {
       dbReader = new DbReader(tonDatabaseRootPath);
     }
@@ -1193,12 +1098,10 @@ public class Exporter {
         dbReader
             .getGlobalIndexDbReader()
             .getArchiveIndexBySeqno(blockIdExt.getWorkchain(), blockIdExt.getSeqno());
-    //    log.info("archive index {}", archiveIndex);
     long offset;
     try (ArchiveIndexReader archiveIndexReader =
         new ArchiveIndexReader(dbReader.getDbRootPath(), archiveIndex)) {
       offset = archiveIndexReader.getOffsetByHash(blockFileKey.getKeyHash());
-      //      log.info("found offset: {}", offset);
 
       long mcSeqno;
       if (blockIdExt.getWorkchain() == -1) {
@@ -1208,7 +1111,6 @@ public class Exporter {
         BlockInfo blockInfo = archiveIndexReader.getDbInfoByHash(key.getKeyHash());
         mcSeqno = blockInfo.getMasterRefSeqno();
       }
-      //      log.info("found mcSeqno: {}", mcSeqno);
       String packFilename =
           archiveIndexReader.getExactPackFilename(
               archiveIndex,
@@ -1216,7 +1118,6 @@ public class Exporter {
               blockIdExt.getWorkchain(),
               blockIdExt.getShard(),
               mcSeqno);
-      //      log.info("found pack filename: {}", packFilename);
       try (PackageReader packageReader = new PackageReader(packFilename)) {
         PackageReader.PackageEntry packageEntry = packageReader.getEntryAt(offset);
         return packageEntry.getBlock();
@@ -1224,6 +1125,7 @@ public class Exporter {
     }
   }
 
+  /** returns Block of TL-B type by wc, shard and seqno (BlockId) */
   public Block getBlock(BlockId blockId) throws IOException {
 
     DbLtDescKey keyHash =
@@ -1259,7 +1161,6 @@ public class Exporter {
       // offset
       BlockFileKey blockFileKey = BlockFileKey.builder().blockIdExt(blockIdExt).build();
       long offset = archiveIndexReader.getOffsetByHash(blockFileKey.getKeyHash());
-      //      log.info("found mcSeqno: {}", mcSeqno);
 
       String packFilename =
           archiveIndexReader.getExactPackFilename(
@@ -1268,7 +1169,6 @@ public class Exporter {
               blockIdExt.getWorkchain(),
               blockIdExt.getShard(),
               mcSeqno);
-      //      log.info("found pack filename: {}", packFilename);
       try (PackageReader packageReader = new PackageReader(packFilename)) {
         PackageReader.PackageEntry packageEntry = packageReader.getEntryAt(offset);
         return packageEntry.getBlock();
@@ -1276,13 +1176,7 @@ public class Exporter {
     }
   }
 
-  //  public Block getBlock(
-  //      int wc, long shard, int seqno, byte[] rootHash, byte[] fileHash) throws IOException {
-  //
-  //    try (GlobalIndexDbReader globalIndexReader = new GlobalIndexDbReader(tonDatabaseRootPath))
-  // {}
-  //  }
-
+  /** Quickly returns the latest BlockIdExt */
   public org.ton.ton4j.tl.types.db.block.BlockIdExt getLastBlockIdExt() {
     try (StateDbReader stateReader = new StateDbReader(tonDatabaseRootPath)) {
 
@@ -1294,16 +1188,12 @@ public class Exporter {
   }
 
   /**
-   * Gets the very last (most recently added) deserialized block from the RocksDB database. This
-   * optimized version uses GlobalIndexDbReader to get temp package timestamps directly from the
-   * global index, then reads temp packages directly from the files database.
-   *
-   * @return The most recently added Block of masterchain, or null if no blocks are found
-   * @throws IOException If an I/O error occurs while reading the database
+   * Gets the very last (most recently added) deserialized block from the local RocksDB database.
    */
   public Pair<org.ton.ton4j.tlb.BlockIdExt, Block> getLast() throws IOException {
 
-    try (GlobalIndexDbReader globalIndexReader = new GlobalIndexDbReader(tonDatabaseRootPath)) {
+    try (GlobalIndexDbReader globalIndexReader =
+        new GlobalIndexDbReader(tonDatabaseRootPath, false)) {
       IndexValue mainIndex = globalIndexReader.getMainIndexIndexValue();
 
       if (mainIndex == null || mainIndex.getTempPackages().isEmpty()) {
@@ -1332,16 +1222,12 @@ public class Exporter {
 
   /**
    * Gets the very last (most recently added) serialized block in format of Bag Of Cells from the
-   * RocksDB database. This optimized version uses GlobalIndexDbReader to get temp package
-   * timestamps directly from the global index, then reads temp packages directly from the files
-   * database.
-   *
-   * @return The most recently added Block of masterchain, or null if no blocks are found
-   * @throws IOException If an I/O error occurs while reading the database
+   * local RocksDB database.
    */
   public byte[] getLastAsBoc() throws IOException {
 
-    try (GlobalIndexDbReader globalIndexReader = new GlobalIndexDbReader(tonDatabaseRootPath)) {
+    try (GlobalIndexDbReader globalIndexReader =
+        new GlobalIndexDbReader(tonDatabaseRootPath, false)) {
       IndexValue mainIndex = globalIndexReader.getMainIndexIndexValue();
 
       if (mainIndex == null || mainIndex.getTempPackages().isEmpty()) {
@@ -1368,9 +1254,14 @@ public class Exporter {
     }
   }
 
+  /**
+   * Gets the very last (most recently added) serialized block in format of Cell from the local
+   * RocksDB database.
+   */
   public Cell getLastAsCell() throws IOException {
 
-    try (GlobalIndexDbReader globalIndexReader = new GlobalIndexDbReader(tonDatabaseRootPath)) {
+    try (GlobalIndexDbReader globalIndexReader =
+        new GlobalIndexDbReader(tonDatabaseRootPath, false)) {
       IndexValue mainIndex = globalIndexReader.getMainIndexIndexValue();
 
       if (mainIndex == null || mainIndex.getTempPackages().isEmpty()) {
@@ -1399,15 +1290,11 @@ public class Exporter {
 
   /**
    * Gets the very last (most recently added) <code>limit</code> blocks from the RocksDB database.
-   * This optimized version uses GlobalIndexDbReader to get temp package timestamps directly from
-   * the global index, then reads temp packages directly from the files database.
-   *
-   * @return The most recently added number of blocks of masterchain and any workchain.
-   * @throws IOException If an I/O error occurs while reading the database
    */
   public TreeMap<org.ton.ton4j.tlb.BlockIdExt, Block> getLast(int limit) throws IOException {
 
-    try (GlobalIndexDbReader globalIndexReader = new GlobalIndexDbReader(tonDatabaseRootPath)) {
+    try (GlobalIndexDbReader globalIndexReader =
+        new GlobalIndexDbReader(tonDatabaseRootPath, false)) {
       IndexValue mainIndex = globalIndexReader.getMainIndexIndexValue();
 
       if (mainIndex == null || mainIndex.getTempPackages().isEmpty()) {
@@ -1434,15 +1321,11 @@ public class Exporter {
     }
   }
 
-  /**
-   * Return latest Block of particular wc and shard.
-   *
-   * @return The most recently added number of blocks of masterchain and any workchain.
-   * @throws IOException If an I/O error occurs while reading the database
-   */
+  /** Returns latest Block of particular wc and shard. */
   public Block getLast(int wc, long shard) throws IOException {
 
-    try (GlobalIndexDbReader globalIndexReader = new GlobalIndexDbReader(tonDatabaseRootPath)) {
+    try (GlobalIndexDbReader globalIndexReader =
+        new GlobalIndexDbReader(tonDatabaseRootPath, false)) {
       IndexValue mainIndex = globalIndexReader.getMainIndexIndexValue();
 
       if (mainIndex == null || mainIndex.getTempPackages().isEmpty()) {
@@ -1489,6 +1372,7 @@ public class Exporter {
         address);
   }
 
+  /** return ShardAccount only */
   public ShardAccountLazy getShardAccountByAddress(BlockIdExt blockIdExt, Address address)
       throws IOException {
     try (CellDbReader cellDbReader = new CellDbReader(tonDatabaseRootPath)) {
@@ -1530,6 +1414,10 @@ public class Exporter {
     }
   }
 
+  /**
+   * Returns balance by address. Retrieval of address located in a masterchain is much faster, since
+   * there is no need to retrieve other shards' information.
+   */
   public BigInteger getBalance(Address address) {
     try (StateDbReader stateReader = new StateDbReader(tonDatabaseRootPath)) {
 
@@ -1552,6 +1440,10 @@ public class Exporter {
     }
   }
 
+  /**
+   * Returns balance by address and masterchain seqno. Retrieval of address located in a masterchain
+   * is much faster, since there is no need to retrieve other shards' information.
+   */
   public BigInteger getBalance(Address address, long seqno) {
     try (StateDbReader ignored = new StateDbReader(tonDatabaseRootPath)) {
       BlockId blockId =

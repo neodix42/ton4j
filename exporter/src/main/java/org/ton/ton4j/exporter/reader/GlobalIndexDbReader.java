@@ -61,6 +61,24 @@ public class GlobalIndexDbReader implements Closeable {
     buildPackageIndex();
   }
 
+  /**
+   * Creates a new FilesDbReader.
+   *
+   * @param dbPath Path to the database root directory (should contain files/globalindex)
+   * @param withPreloadedList if true - builds an optimized in-memory index for fast package lookup
+   *     by seqno. This method scans all packages once and creates a TreeMap for each workchain that
+   *     maps seqno ranges to package IDs, enabling O(log n) lookups instead of O(n).
+   * @throws IOException If an I/O error occurs
+   */
+  public GlobalIndexDbReader(String dbPath, boolean withPreloadedList) throws IOException {
+    this.dbPath = dbPath;
+    initializeFilesDatabase();
+    loadMainIndex();
+    if (withPreloadedList) {
+      buildPackageIndex();
+    }
+  }
+
   /** Initializes the Files database global index. */
   private void initializeFilesDatabase() throws IOException {
     Path filesPath = Paths.get(dbPath, "files");
