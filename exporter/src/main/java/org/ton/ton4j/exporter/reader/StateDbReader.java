@@ -344,6 +344,10 @@ public class StateDbReader implements Closeable {
                 .build()
                 .serialize());
     byte[] value = stateRocksDb.get(keyHash);
+    if (value == null) {
+      throw new RuntimeException(
+          "Cannot find persistent state description shard for seqno " + masterSeqno);
+    }
     return PersistentStateDescriptionShards.deserialize(ByteBuffer.wrap(value));
   }
 
