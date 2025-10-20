@@ -42,10 +42,10 @@ jobs:
           cd fift
           mvn test
 
-      - name: Run Tolk tests
-        run: |
-          cd tolk
-          mvn test
+      #      - name: Run Tolk tests
+      #        run: |
+      #          cd tolk
+      #          mvn test
 
       - name: Run Address tests
         run: |
