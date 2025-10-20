@@ -457,7 +457,7 @@ public class Exporter {
 
                   if (showProgressInfo) {
                     System.out.printf(
-                        "progress: %5.1f%% %6d/%d, size %7dkb, blocks %6d, elapsed %6dms - %s %n",
+                        "progress: %5.1f%%, package %6d/%d, size %7dkb, blocks %6d, elapsed %6dms - %s %n",
                         exportStatus.getProgressPercentage(),
                         exportStatus.getProcessedCount(),
                         exportStatus.getTotalPackages(),

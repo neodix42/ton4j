@@ -9,7 +9,6 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicInteger;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 import org.ton.ton4j.exporter.types.ArchiveFileLocation;
@@ -45,6 +44,10 @@ public class GlobalIndexDbReader implements Closeable {
 
   private IndexValue mainIndexIndexValue;
 
+  // Optimized index for fast archive lookup by seqno
+  // Key: workchain, Value: TreeMap of (seqno -> packageId)
+  private final Map<Integer, TreeMap<Integer, Integer>> packageIndexByWorkchain = new HashMap<>();
+
   /**
    * Creates a new FilesDbReader.
    *
@@ -55,6 +58,7 @@ public class GlobalIndexDbReader implements Closeable {
     this.dbPath = dbPath;
     initializeFilesDatabase();
     loadMainIndex();
+    buildPackageIndex();
   }
 
   /** Initializes the Files database global index. */
@@ -115,6 +119,69 @@ public class GlobalIndexDbReader implements Closeable {
     } catch (Exception e) {
       throw new IOException("Error loading main index: " + e.getMessage(), e);
     }
+  }
+
+  /**
+   * Builds an optimized in-memory index for fast package lookup by seqno. This method scans all
+   * packages once and creates a TreeMap for each workchain that maps seqno ranges to package IDs,
+   * enabling O(log n) lookups instead of O(n).
+   */
+  private void buildPackageIndex() {
+    log.info("Building optimized package index for fast seqno lookups...");
+    int packageCount = 0;
+
+    globalIndexDb.forEach(
+        (key, value) -> {
+          try {
+            GlobalIndexKey globalIndexKey = GlobalIndexKey.deserialize(key);
+            if (!(globalIndexKey instanceof PackageKey)) {
+              return;
+            }
+
+            GlobalIndexValue globalIndexValue = GlobalIndexValue.deserialize(value);
+            if (!(globalIndexValue instanceof PackageValue)) {
+              return;
+            }
+
+            PackageValue packageValue = (PackageValue) globalIndexValue;
+            if (packageValue.isTemp()) {
+              return; // Skip temp packages
+            }
+
+            int packageId = ((PackageKey) globalIndexKey).getPackageId();
+            List<FirstBlock> firstBlocks = packageValue.getFirstblocks();
+
+            if (firstBlocks == null || firstBlocks.isEmpty()) {
+              return;
+            }
+
+            // Index each first block by workchain and seqno
+            for (FirstBlock firstBlock : firstBlocks) {
+              int workchain = firstBlock.getWorkchain();
+              int seqno = firstBlock.getSeqno();
+
+              // Get or create TreeMap for this workchain
+              TreeMap<Integer, Integer> seqnoMap =
+                  packageIndexByWorkchain.computeIfAbsent(workchain, k -> new TreeMap<>());
+
+              // Store the mapping: seqno -> packageId
+              // If multiple packages have the same seqno, keep the one with higher packageId
+              seqnoMap.merge(seqno, packageId, Math::max);
+            }
+          } catch (Exception e) {
+            log.debug("Error processing package for index: {}", e.getMessage());
+          }
+        });
+
+    // Count total entries
+    for (TreeMap<Integer, Integer> map : packageIndexByWorkchain.values()) {
+      packageCount += map.size();
+    }
+
+    log.info(
+        "Package index built: {} workchains, {} total seqno entries",
+        packageIndexByWorkchain.size(),
+        packageCount);
   }
 
   /** Reads blocks from a Files database package using the global index. */
@@ -693,33 +760,43 @@ public class GlobalIndexDbReader implements Closeable {
     return s.matches("^[0-9A-Fa-f]+$");
   }
 
+  /**
+   * Gets the archive index (package ID) for a given workchain and seqno. This optimized version
+   * uses the pre-built in-memory index for O(log n) lookup instead of iterating through all
+   * packages (O(n)).
+   *
+   * @param wc Workchain ID
+   * @param seqno Sequence number
+   * @return Package ID that contains the block, or 0 if not found
+   */
   public int getArchiveIndexBySeqno(long wc, long seqno) {
-    AtomicInteger foundPackageId = new AtomicInteger();
-    AtomicInteger maximum = new AtomicInteger();
-    globalIndexDb.forEach(
-        (key, value) -> {
-          //          GlobalIndexKey globalIndexKey = GlobalIndexKey.deserialize(key);
-          GlobalIndexValue globalIndexValue = GlobalIndexValue.deserialize(value);
+    // Get the TreeMap for this workchain
+    TreeMap<Integer, Integer> seqnoMap = packageIndexByWorkchain.get((int) wc);
 
-          if (globalIndexValue instanceof PackageValue) {
-            if (!(((PackageValue) globalIndexValue).getFirstblocks()).isEmpty()) {
-              for (FirstBlock firstBlock : (((PackageValue) globalIndexValue).getFirstblocks())) {
-                if (firstBlock.getWorkchain() != wc) {
-                  continue;
-                }
-                if (firstBlock.getSeqno() > maximum.get()) {
-                  maximum.set(firstBlock.getSeqno());
-                }
-                if (firstBlock.getSeqno() <= seqno) {
-                  if (foundPackageId.get() < ((PackageValue) globalIndexValue).getPackageId()) {
-                    foundPackageId.set(((PackageValue) globalIndexValue).getPackageId());
-                  }
-                }
-              }
-            }
-          }
-        });
-    return foundPackageId.get();
+    if (seqnoMap == null || seqnoMap.isEmpty()) {
+      log.debug("No packages found for workchain {}", wc);
+      return 0;
+    }
+
+    // Find the floor entry: largest seqno <= target seqno
+    // This gives us the package that starts at or before our target seqno
+    Map.Entry<Integer, Integer> floorEntry = seqnoMap.floorEntry((int) seqno);
+
+    if (floorEntry == null) {
+      log.debug("No package found for workchain {} and seqno {} (seqno too small)", wc, seqno);
+      return 0;
+    }
+
+    // Return the package ID
+    int packageId = floorEntry.getValue();
+    log.debug(
+        "Found package {} for workchain {} seqno {} (package starts at seqno {})",
+        packageId,
+        wc,
+        seqno,
+        floorEntry.getKey());
+
+    return packageId;
   }
 
   @Override
