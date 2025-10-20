@@ -25,7 +25,7 @@ public class TestPerformanceAdnlTonlibExporter {
 
     Pair<BlockIdExt, Block> block = exporter.getLast();
     long end = System.currentTimeMillis();
-    log.info("Direct TON DB: {} ms", end - start);
+    log.info("Direct TON DB: {} ms", end - start); // ~ 400ms
   }
 
   @Test
@@ -39,7 +39,21 @@ public class TestPerformanceAdnlTonlibExporter {
     BlockData blockData = client.getBlock(info.getLast());
     Block block = blockData.getBlock();
     long end = System.currentTimeMillis();
-    log.info("AdnlLiteClient: {} ms", end - start);
+    log.info("AdnlLiteClient: {} ms", end - start); // ~ 800ms
+  }
+
+  @Test
+  public void testPerformanceAdnlMyLocalTon() throws Exception {
+
+    TonGlobalConfig tonGlobalConfig =
+        TonGlobalConfig.loadFromUrl(Utils.getGlobalConfigUrlMyLocalTon());
+    long start = System.currentTimeMillis();
+    AdnlLiteClient client = AdnlLiteClient.builder().globalConfig(tonGlobalConfig).build();
+    MasterchainInfo info = client.getMasterchainInfo();
+    BlockData blockData = client.getBlock(info.getLast());
+    Block block = blockData.getBlock();
+    long end = System.currentTimeMillis();
+    log.info("AdnlLiteClient: {} ms", end - start); // ~ 250ms
   }
 
   @Test

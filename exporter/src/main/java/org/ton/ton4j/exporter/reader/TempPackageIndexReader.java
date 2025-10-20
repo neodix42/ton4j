@@ -65,7 +65,6 @@ public class TempPackageIndexReader implements Closeable {
 
     try {
       indexDb = new RocksDbWrapper(indexPath);
-      log.debug("Initialized temp package index: {}", indexPath);
     } catch (IOException e) {
       throw new IOException("Could not initialize temp package index: " + e.getMessage(), e);
     }

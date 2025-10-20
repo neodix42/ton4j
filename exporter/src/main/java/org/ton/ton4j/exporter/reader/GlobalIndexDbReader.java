@@ -127,7 +127,6 @@ public class GlobalIndexDbReader implements Closeable {
    * enabling O(log n) lookups instead of O(n).
    */
   private void buildPackageIndex() {
-    log.info("Building optimized package index for fast seqno lookups...");
     int packageCount = 0;
 
     globalIndexDb.forEach(
@@ -177,11 +176,6 @@ public class GlobalIndexDbReader implements Closeable {
     for (TreeMap<Integer, Integer> map : packageIndexByWorkchain.values()) {
       packageCount += map.size();
     }
-
-    log.info(
-        "Package index built: {} workchains, {} total seqno entries",
-        packageIndexByWorkchain.size(),
-        packageCount);
   }
 
   /** Reads blocks from a Files database package using the global index. */

@@ -516,7 +516,10 @@ public class TestExporter {
       //      ShardAccountLazy shardAccount =
       //          exporter.getShardAccountByAddress(blockIdExtMc, address, false);
 
-      log.info("shardAccount balance {}", Utils.formatNanoValue(exporter.getBalance(address)));
+      log.info(
+          "shardAccount balance {} of {}",
+          Utils.formatNanoValue(exporter.getBalance(address)),
+          address.toRaw());
     }
   }
 
@@ -539,7 +542,10 @@ public class TestExporter {
             Address.of("-1:22f53b7d9aba2cef44755f7078b01614cd4dde2388a1729c2c386cf8f9898afe"),
             // adnl 669343021899572, our - not found
             Address.of("-1:6744e92c6f71c776fbbcef299e31bf76f39c245cd56f2075b89c6a22026b4131"))) {
-      log.info("shardAccount balance {}", Utils.formatNanoValue(exporter.getBalance(address)));
+      log.info(
+          "shardAccount balance {} of {}",
+          Utils.formatNanoValue(exporter.getBalance(address)),
+          address.toRaw());
     }
   }
 
