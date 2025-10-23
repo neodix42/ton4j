@@ -4,12 +4,12 @@ import static java.util.Objects.isNull;
 
 import lombok.Builder;
 import lombok.Getter;
-import org.ton.ton4j.adnl.AdnlLiteClient;
-import org.ton.ton4j.toncenter.TonCenter;
 import org.ton.ton4j.address.Address;
+import org.ton.ton4j.adnl.AdnlLiteClient;
 import org.ton.ton4j.cell.Cell;
 import org.ton.ton4j.cell.CellBuilder;
 import org.ton.ton4j.smartcontract.wallet.Contract;
+import org.ton.ton4j.toncenter.TonCenter;
 import org.ton.ton4j.tonlib.Tonlib;
 
 @Builder
@@ -19,6 +19,9 @@ public class NftMarketplace implements Contract {
       "B5EE9C7241010401006D000114FF00F4A413F4BCF2C80B01020120020300AAD23221C700915BE0D0D3030171B0915BE0FA40ED44D0FA403012C705F2E19101D31F01C0018E2BFA003001D4D43021F90070C8CA07CBFFC9D077748018C8CB05CB0258CF165004FA0213CB6BCCCCC971FB00915BE20004F2308EF7CCE7";
 
   Address adminAddress;
+
+  public static Cell CODE_CELL =
+      CellBuilder.beginCell().fromBoc(NFT_MARKETPLACE_CODE_HEX).endCell();
 
   public static class NftMarketplaceBuilder {}
 
@@ -51,7 +54,7 @@ public class NftMarketplace implements Contract {
   public void setAdnlLiteClient(AdnlLiteClient pAdnlLiteClient) {
     adnlLiteClient = pAdnlLiteClient;
   }
-  
+
   @Override
   public TonCenter getTonCenterClient() {
     return tonCenterClient;

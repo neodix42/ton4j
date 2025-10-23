@@ -9,9 +9,8 @@ import java.util.Deque;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.StringUtils;
-import org.ton.ton4j.adnl.AdnlLiteClient;
 import org.ton.ton4j.address.Address;
+import org.ton.ton4j.adnl.AdnlLiteClient;
 import org.ton.ton4j.cell.Cell;
 import org.ton.ton4j.cell.CellBuilder;
 import org.ton.ton4j.cell.CellSlice;
@@ -36,9 +35,10 @@ import org.ton.ton4j.utils.Utils;
 public class JettonMinter implements Contract {
   Address adminAddress;
   Cell content;
-  String jettonWalletCodeHex;
   Address customAddress;
-  String code;
+
+  public static Cell CODE_CELL =
+      CellBuilder.beginCell().fromBoc(WalletCodes.jettonMinter.getValue()).endCell();
 
   public static class JettonMinterBuilder {}
 
@@ -103,29 +103,17 @@ public class JettonMinter implements Contract {
    */
   @Override
   public Cell createDataCell() {
-    if (StringUtils.isNotEmpty(code)) {
-      return CellBuilder.beginCell()
-          .storeCoins(BigInteger.ZERO)
-          .storeAddress(adminAddress)
-          .storeRef(content)
-          .storeRef(CellBuilder.beginCell().fromBoc(code).endCell())
-          .endCell();
-    } else {
-      return CellBuilder.beginCell()
-          .storeCoins(BigInteger.ZERO)
-          .storeAddress(adminAddress)
-          .storeRef(content)
-          .storeRef(CellBuilder.beginCell().fromBoc(jettonWalletCodeHex).endCell())
-          .endCell();
-    }
+
+    return CellBuilder.beginCell()
+        .storeCoins(BigInteger.ZERO)
+        .storeAddress(adminAddress)
+        .storeRef(content)
+        .storeRef(CellBuilder.beginCell().fromBoc(WalletCodes.jettonWallet.getValue()).endCell())
+        .endCell();
   }
 
   @Override
   public Cell createCodeCell() {
-    if (StringUtils.isNotEmpty(code)) {
-      log.info("Using custom JettonMinter");
-      return CellBuilder.beginCell().fromBoc(code).endCell();
-    }
     return CellBuilder.beginCell().fromBoc(WalletCodes.jettonMinter.getValue()).endCell();
   }
 
@@ -137,6 +125,7 @@ public class JettonMinter implements Contract {
    * @param fromAddress Address
    * @param responseAddress Address
    * @param forwardTonAmount BigInteger
+   * @param forwardPayload Cell
    * @return Cell
    */
   public static Cell createMintBody(
@@ -149,7 +138,7 @@ public class JettonMinter implements Contract {
       BigInteger forwardTonAmount,
       Cell forwardPayload) {
     return CellBuilder.beginCell()
-        .storeUint(21, 32) // OP mint
+        .storeUint(0x15, 32) // OP mint
         .storeUint(queryId, 64) // query_id, default 0
         .storeAddress(destination)
         .storeCoins(amount)

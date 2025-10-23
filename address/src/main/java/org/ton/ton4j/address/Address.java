@@ -20,16 +20,16 @@ public class Address implements Serializable {
   private static final long serialVersionUID = 1L;
 
   // Constants
-  private static final byte BOUNCEABLE_TAG = 0x11;
-  private static final byte NON_BOUNCEABLE_TAG = 0x51;
-  private static final int TEST_FLAG = 0x80;
+  public static final byte BOUNCEABLE_TAG = 0x11;
+  public static final byte NON_BOUNCEABLE_TAG = 0x51;
+  public static final int TEST_FLAG = 0x80;
 
   // Bit flags for boolean properties (memory optimization)
-  private static final byte FLAG_TEST_ONLY = 1; // 0000 0001
-  private static final byte FLAG_USER_FRIENDLY = 2; // 0000 0010
-  private static final byte FLAG_BOUNCEABLE = 4; // 0000 0100
-  private static final byte FLAG_WALLET = 8; // 0000 1000
-  private static final byte FLAG_URL_SAFE = 16; // 0001 0000
+  public static final byte FLAG_TEST_ONLY = 1; // 0000 0001
+  public static final byte FLAG_USER_FRIENDLY = 2; // 0000 0010
+  public static final byte FLAG_BOUNCEABLE = 4; // 0000 0100
+  public static final byte FLAG_WALLET = 8; // 0000 1000
+  public static final byte FLAG_URL_SAFE = 16; // 0001 0000
 
   // Core address data
   public byte wc;

@@ -2,24 +2,23 @@ package org.ton.ton4j.smartcontract.token.nft;
 
 import static java.util.Objects.nonNull;
 
+import com.google.gson.internal.LinkedTreeMap;
 import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-
-import com.google.gson.internal.LinkedTreeMap;
 import lombok.Builder;
 import lombok.Getter;
-import org.ton.ton4j.adnl.AdnlLiteClient;
-import org.ton.ton4j.cell.CellSlice;
-import org.ton.ton4j.toncenter.TonCenter;
 import org.ton.ton4j.address.Address;
+import org.ton.ton4j.adnl.AdnlLiteClient;
 import org.ton.ton4j.cell.Cell;
 import org.ton.ton4j.cell.CellBuilder;
+import org.ton.ton4j.cell.CellSlice;
 import org.ton.ton4j.smartcontract.types.ItemData;
 import org.ton.ton4j.smartcontract.types.Royalty;
 import org.ton.ton4j.smartcontract.types.WalletCodes;
 import org.ton.ton4j.smartcontract.wallet.Contract;
+import org.ton.ton4j.toncenter.TonCenter;
 import org.ton.ton4j.toncenter.model.RunGetMethodResponse;
 import org.ton.ton4j.tonlib.Tonlib;
 import org.ton.ton4j.tonlib.types.RunResult;
@@ -40,6 +39,9 @@ public class NftItem implements Contract {
   private AdnlLiteClient adnlLiteClient;
   private TonCenter tonCenterClient;
 
+  public static Cell CODE_CELL =
+      CellBuilder.beginCell().fromBoc(WalletCodes.nftItem.getValue()).endCell();
+
   @Override
   public AdnlLiteClient getAdnlLiteClient() {
     return adnlLiteClient;
@@ -49,7 +51,7 @@ public class NftItem implements Contract {
   public void setAdnlLiteClient(AdnlLiteClient pAdnlLiteClient) {
     adnlLiteClient = pAdnlLiteClient;
   }
-  
+
   @Override
   public TonCenter getTonCenterClient() {
     return tonCenterClient;
@@ -113,37 +115,46 @@ public class NftItem implements Contract {
       try {
         // Use TonCenter API to get NFT data
         RunGetMethodResponse response =
-            tonCenterClient.runGetMethod(getAddress().toBounceable(), "get_nft_data", new ArrayList<>()).getResult();
-        
+            tonCenterClient
+                .runGetMethod(getAddress().toBounceable(), "get_nft_data", new ArrayList<>())
+                .getResult();
+
         // Parse the response
-        boolean isInitialized = "0xffffffffffffffff".equals(((String) new ArrayList<>(response.getStack().get(0)).get(1)));
-        
+        boolean isInitialized =
+            "0xffffffffffffffff"
+                .equals(((String) new ArrayList<>(response.getStack().get(0)).get(1)));
+
         // Parse index
-//        String indexHex = ((String) new ArrayList<>(response.getStack().get(1)).get(1));
-        BigInteger index = BigInteger.valueOf(Long.decode(response.getStack().get(0).get(1).toString()));
-        
+        //        String indexHex = ((String) new ArrayList<>(response.getStack().get(1)).get(1));
+        BigInteger index =
+            BigInteger.valueOf(Long.decode(response.getStack().get(0).get(1).toString()));
+
         // Parse collection address
         List<Object> elements = new ArrayList<>(response.getStack().get(2));
         Map<String, String> l = (LinkedTreeMap<String, String>) elements.get(1);
         Cell c = Cell.fromBocBase64(l.get("bytes"));
-//        String collectionAddrHex = ((String) new ArrayList<>(response.getStack().get(2)).get(1));
+        //        String collectionAddrHex = ((String) new
+        // ArrayList<>(response.getStack().get(2)).get(1));
         Address collectionAddress = CellSlice.beginParse(c).loadAddress();
-//
+        //
         // Parse owner address
         elements = new ArrayList<>(response.getStack().get(3));
         l = (LinkedTreeMap<String, String>) elements.get(1);
         c = Cell.fromBocBase64(l.get("bytes"));
         Address ownerAddress = CellSlice.beginParse(c).loadAddress();
-//        String ownerAddrHex = ((String) new ArrayList<>(response.getStack().get(3)).get(1));
-//        Address ownerAddress = isInitialized ? Address.of(ownerAddrHex) : null;
-        
+        //        String ownerAddrHex = ((String) new
+        // ArrayList<>(response.getStack().get(3)).get(1));
+        //        Address ownerAddress = isInitialized ? Address.of(ownerAddrHex) : null;
+
         // Parse content cell
         elements = new ArrayList<>(response.getStack().get(4));
         l = (LinkedTreeMap<String, String>) elements.get(1);
         Cell cell = Cell.fromBocBase64(l.get("bytes"));
-//        String contentCellHex = ((String) new ArrayList<>(response.getStack().get(4)).get(1));
-//        Cell cell = CellBuilder.beginCell().fromBoc(org.ton.ton4j.utils.Utils.base64ToBytes(contentCellHex)).endCell();
-        
+        //        String contentCellHex = ((String) new
+        // ArrayList<>(response.getStack().get(4)).get(1));
+        //        Cell cell =
+        // CellBuilder.beginCell().fromBoc(org.ton.ton4j.utils.Utils.base64ToBytes(contentCellHex)).endCell();
+
         String contentUri = null;
         try {
           if (isInitialized && nonNull(collectionAddress)) {
@@ -152,7 +163,7 @@ public class NftItem implements Contract {
         } catch (Error e) {
           // todo
         }
-        
+
         return ItemData.builder()
             .isInitialized(isInitialized)
             .index(index)
@@ -169,7 +180,7 @@ public class NftItem implements Contract {
       // Not implemented yet
       throw new Error("AdnlLiteClient implementation for getData not yet available");
     }
-    
+
     // Fallback to Tonlib
     RunResult result = tonlib.runMethod(getAddress(), "get_nft_data");
 
@@ -262,24 +273,30 @@ public class NftItem implements Contract {
    */
   public Royalty getRoyaltyParams(Tonlib tonlib) {
     Address myAddress = this.getAddress();
-    
+
     if (nonNull(tonCenterClient)) {
       try {
         // Use TonCenter API to get royalty params
         List<List<Object>> stack = new ArrayList<>();
         RunGetMethodResponse response =
-            tonCenterClient.runGetMethod(myAddress.toBounceable(), "royalty_params", stack).getResult();
-        
+            tonCenterClient
+                .runGetMethod(myAddress.toBounceable(), "royalty_params", stack)
+                .getResult();
+
         // Parse royalty numerator
-        long royaltyNumerator = Long.parseLong(((String) new ArrayList<>(response.getStack().get(0)).get(1)).substring(2), 16);
-        
+        long royaltyNumerator =
+            Long.parseLong(
+                ((String) new ArrayList<>(response.getStack().get(0)).get(1)).substring(2), 16);
+
         // Parse royalty denominator
-        long royaltyDenominator = Long.parseLong(((String) new ArrayList<>(response.getStack().get(1)).get(1)).substring(2), 16);
-        
+        long royaltyDenominator =
+            Long.parseLong(
+                ((String) new ArrayList<>(response.getStack().get(1)).get(1)).substring(2), 16);
+
         // Parse royalty address
         String royaltyAddrHex = ((String) new ArrayList<>(response.getStack().get(2)).get(1));
         Address royaltyAddress = Address.of(royaltyAddrHex);
-        
+
         return Royalty.builder()
             .royaltyFactor(BigInteger.valueOf(royaltyNumerator))
             .royaltyBase(BigInteger.valueOf(royaltyDenominator))
@@ -293,7 +310,7 @@ public class NftItem implements Contract {
       // Not implemented yet
       throw new Error("AdnlLiteClient implementation for getRoyaltyParams not yet available");
     }
-    
+
     // Fallback to Tonlib
     return NftUtils.getRoyaltyParams(tonlib, myAddress);
   }

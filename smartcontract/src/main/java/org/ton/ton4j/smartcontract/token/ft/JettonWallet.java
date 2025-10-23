@@ -4,12 +4,10 @@ import static java.util.Objects.nonNull;
 
 import java.math.BigInteger;
 import java.util.ArrayList;
-import java.util.List;
-
 import lombok.Builder;
 import lombok.Getter;
-import org.ton.ton4j.adnl.AdnlLiteClient;
 import org.ton.ton4j.address.Address;
+import org.ton.ton4j.adnl.AdnlLiteClient;
 import org.ton.ton4j.cell.Cell;
 import org.ton.ton4j.cell.CellBuilder;
 import org.ton.ton4j.cell.CellSlice;
@@ -33,6 +31,9 @@ import org.ton.ton4j.utils.Utils;
 public class JettonWallet implements Contract {
 
   Address address;
+
+  public static Cell CODE_CELL =
+      CellBuilder.beginCell().fromBoc(WalletCodes.jettonWallet.getValue()).endCell();
 
   public static class JettonWalletBuilder {}
 
@@ -152,20 +153,23 @@ public class JettonWallet implements Contract {
                 .getResult();
 
         // Parse the response
-        BigInteger balance = new BigInteger(((String) new ArrayList<>(response.getStack().get(0)).get(1)).substring(2), 16);
-        
+        BigInteger balance =
+            new BigInteger(
+                ((String) new ArrayList<>(response.getStack().get(0)).get(1)).substring(2), 16);
+
         // Parse owner address from stack
         String ownerAddrHex = ((String) new ArrayList<>(response.getStack().get(1)).get(1));
         Address ownerAddress = Address.of(ownerAddrHex);
-        
+
         // Parse jetton minter address from stack
         String minterAddrHex = ((String) new ArrayList<>(response.getStack().get(2)).get(1));
         Address jettonMinterAddress = Address.of(minterAddrHex);
-        
+
         // Parse jetton wallet code from stack
         String codeHex = ((String) new ArrayList<>(response.getStack().get(3)).get(1));
-        Cell jettonWalletCode = CellBuilder.beginCell().fromBoc(Utils.base64ToBytes(codeHex)).endCell();
-        
+        Cell jettonWalletCode =
+            CellBuilder.beginCell().fromBoc(Utils.base64ToBytes(codeHex)).endCell();
+
         return JettonWalletData.builder()
             .balance(balance)
             .ownerAddress(ownerAddress)
@@ -258,5 +262,49 @@ public class JettonWallet implements Contract {
 
     TvmStackEntryNumber balanceNumber = (TvmStackEntryNumber) result.getStack().get(0);
     return balanceNumber.getNumber();
+  }
+
+  public static Cell packJettonWalletData(
+      BigInteger balance,
+      Address ownerAddress,
+      Address jettonMasterAddress,
+      Cell jettonWalletCode) {
+    return CellBuilder.beginCell()
+        .storeCoins(balance)
+        .storeAddress(ownerAddress)
+        .storeAddress(jettonMasterAddress)
+        .storeRef(jettonWalletCode)
+        .endCell();
+  }
+
+  public static Cell calculateJettonWalletStateInit(
+      Address ownerAddress, Address jettonMasterAddress, Cell jettonWalletCode) {
+    return CellBuilder.beginCell()
+        .storeUint(0, 2)
+        .storeDict(jettonWalletCode)
+        .storeDict(
+            packJettonWalletData(
+                BigInteger.ZERO, ownerAddress, jettonMasterAddress, jettonWalletCode))
+        .storeUint(0, 1)
+        .endCell();
+  }
+
+  public static Cell calculateJettonWalletAddress(int wc, Cell stateInit) {
+    return CellBuilder.beginCell()
+        .storeUint(4, 3)
+        .storeInt(wc, 8)
+        .storeBytes(stateInit.getHash())
+        .endCell();
+  }
+
+  public static Address calculateUserJettonWalletAddress(
+      int wc, Address ownerAddress, Address jettonMasterAddress, Cell jettonWalletCode) {
+    Cell cell =
+        calculateJettonWalletAddress(
+            wc,
+            calculateJettonWalletStateInit(ownerAddress, jettonMasterAddress, jettonWalletCode));
+    CellSlice cs = CellSlice.beginParse(cell);
+    cs.skipBits(3);
+    return Address.of(Address.BOUNCEABLE_TAG, cs.loadUint(8).intValue(), cs.loadBytes(256));
   }
 }

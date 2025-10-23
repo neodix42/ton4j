@@ -1,22 +1,21 @@
 package org.ton.ton4j.smartcontract.token.nft;
 
+import com.google.gson.internal.LinkedTreeMap;
 import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-
-import com.google.gson.internal.LinkedTreeMap;
 import lombok.Builder;
 import lombok.Getter;
-import org.ton.ton4j.adnl.AdnlLiteClient;
-import org.ton.ton4j.cell.CellSlice;
-import org.ton.ton4j.toncenter.TonCenter;
 import org.ton.ton4j.address.Address;
+import org.ton.ton4j.adnl.AdnlLiteClient;
 import org.ton.ton4j.cell.Cell;
 import org.ton.ton4j.cell.CellBuilder;
+import org.ton.ton4j.cell.CellSlice;
 import org.ton.ton4j.smartcontract.types.NftSaleData;
 import org.ton.ton4j.smartcontract.wallet.Contract;
+import org.ton.ton4j.toncenter.TonCenter;
 import org.ton.ton4j.toncenter.model.RunGetMethodResponse;
 import org.ton.ton4j.tonlib.Tonlib;
 import org.ton.ton4j.tonlib.types.RunResult;
@@ -37,6 +36,8 @@ public class NftSale implements Contract {
   BigInteger marketplaceFee;
   BigInteger royaltyAmount;
   Address royaltyAddress;
+
+  public static Cell CODE_CELL = CellBuilder.beginCell().fromBoc(NFT_SALE_HEX_CODE).endCell();
 
   /**
    *

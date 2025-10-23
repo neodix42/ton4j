@@ -14,7 +14,6 @@ import org.ton.ton4j.smartcontract.faucet.TestnetJettonFaucet;
 import org.ton.ton4j.smartcontract.token.ft.JettonMinter;
 import org.ton.ton4j.smartcontract.token.ft.JettonWallet;
 import org.ton.ton4j.smartcontract.token.nft.NftUtils;
-import org.ton.ton4j.smartcontract.types.WalletCodes;
 import org.ton.ton4j.smartcontract.types.WalletV3Config;
 import org.ton.ton4j.smartcontract.utils.MsgUtils;
 import org.ton.ton4j.smartcontract.wallet.ContractUtils;
@@ -131,7 +130,6 @@ public class TestJettonFaucet {
             .content(
                 NftUtils.createOffChainUriCell(
                     "https://raw.githubusercontent.com/neodix42/ton4j/main/1-media/neo-jetton.json"))
-            .jettonWalletCodeHex(WalletCodes.jettonWallet.getValue())
             .build();
 
     log.info("jetton minter address {}", minter.getAddress());

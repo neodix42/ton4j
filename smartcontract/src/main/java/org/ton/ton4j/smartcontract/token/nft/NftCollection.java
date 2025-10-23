@@ -3,23 +3,22 @@ package org.ton.ton4j.smartcontract.token.nft;
 import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
 
+import com.google.gson.internal.LinkedTreeMap;
 import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
-
-import com.google.gson.internal.LinkedTreeMap;
 import lombok.Builder;
 import lombok.Getter;
-import org.ton.ton4j.adnl.AdnlLiteClient;
-import org.ton.ton4j.cell.CellSlice;
-import org.ton.ton4j.smartcontract.SendResponse;
-import org.ton.ton4j.toncenter.TonCenter;
 import org.ton.ton4j.address.Address;
+import org.ton.ton4j.adnl.AdnlLiteClient;
 import org.ton.ton4j.cell.Cell;
 import org.ton.ton4j.cell.CellBuilder;
+import org.ton.ton4j.cell.CellSlice;
+import org.ton.ton4j.smartcontract.SendResponse;
 import org.ton.ton4j.smartcontract.types.*;
 import org.ton.ton4j.smartcontract.wallet.Contract;
 import org.ton.ton4j.tlb.*;
+import org.ton.ton4j.toncenter.TonCenter;
 import org.ton.ton4j.toncenter.model.RunGetMethodResponse;
 import org.ton.ton4j.tonlib.Tonlib;
 import org.ton.ton4j.tonlib.types.*;
@@ -38,6 +37,9 @@ public class NftCollection implements Contract {
   String nftItemCodeHex;
   Double royalty;
   Address royaltyAddress;
+
+  public static Cell CODE_CELL =
+      CellBuilder.beginCell().fromBoc(WalletCodes.nftCollection.getValue()).endCell();
 
   /**
    *

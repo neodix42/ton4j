@@ -12,7 +12,7 @@ import org.ton.ton4j.cell.Cell;
 import org.ton.ton4j.cell.CellBuilder;
 import org.ton.ton4j.cell.CellSlice;
 import org.ton.ton4j.smartcontract.token.nft.NftUtils;
-import org.ton.ton4j.smartcontract.types.JettonWalletData;
+import org.ton.ton4j.smartcontract.types.JettonWalletDataV2;
 import org.ton.ton4j.smartcontract.types.WalletCodes;
 import org.ton.ton4j.smartcontract.wallet.Contract;
 import org.ton.ton4j.tl.liteserver.responses.RunMethodResult;
@@ -28,22 +28,29 @@ import org.ton.ton4j.utils.Utils;
 
 @Builder
 @Getter
-public class JettonWalletStableCoin implements Contract {
+public class JettonWalletV2 implements Contract {
 
   Address address;
 
   public static Cell CODE_CELL =
-      CellBuilder.beginCell().fromBoc(WalletCodes.jettonWalletStableCoin.getValue()).endCell();
+      CellBuilder.beginCell().fromBoc(WalletCodes.jettonWalletV2.getValue()).endCell();
 
-  public static class JettonWalletStableCoinBuilder {}
+  public static Cell CODE_LIB_CELL =
+      CellBuilder.beginCell()
+          .fromBoc(
+              "b5ee9c7241010101002300084202ba2918c8947e9b25af9ac1b883357754173e5812f807a3d6e642a14709595395237ae3c3")
+          .endCell();
 
-  public static JettonWalletStableCoinBuilder builder() {
-    return new CustomJettonWalletStableCoinBuilder();
+  public static class JettonWalletV2Builder {}
+
+  public static JettonWalletV2Builder builder() {
+    return new CustomJettonWalletV2Builder();
   }
 
-  private static class CustomJettonWalletStableCoinBuilder extends JettonWalletStableCoinBuilder {
+  private static class CustomJettonWalletV2Builder extends JettonWalletV2Builder {
     @Override
-    public JettonWalletStableCoin build() {
+    public JettonWalletV2 build() {
+
       return super.build();
     }
   }
@@ -90,7 +97,7 @@ public class JettonWalletStableCoin implements Contract {
   }
 
   public String getName() {
-    return "jettonWalletStableCoin";
+    return "jettonWallet";
   }
 
   @Override
@@ -100,7 +107,7 @@ public class JettonWalletStableCoin implements Contract {
 
   @Override
   public Cell createCodeCell() {
-    return CellBuilder.beginCell().fromBoc(WalletCodes.jettonWalletStableCoin.getValue()).endCell();
+    return CellBuilder.beginCell().fromBoc(WalletCodes.jettonWalletV2.getValue()).endCell();
   }
 
   /**
@@ -111,6 +118,7 @@ public class JettonWalletStableCoin implements Contract {
       BigInteger jettonAmount,
       Address toAddress,
       Address responseAddress,
+      Cell customPayload,
       BigInteger forwardAmount,
       Cell forwardPayload) {
     return CellBuilder.beginCell()
@@ -119,9 +127,10 @@ public class JettonWalletStableCoin implements Contract {
         .storeCoins(jettonAmount)
         .storeAddress(toAddress)
         .storeAddress(responseAddress)
-        .storeBit(false) // no custom_payload
-        .storeCoins(forwardAmount)
-        .storeRefMaybe(forwardPayload)
+        .storeRefMaybe(customPayload)
+        .storeCoins(forwardAmount) // default 0
+        //        .storeBit(true)
+        .storeRefMaybe(forwardPayload) // forward_payload in ref cell
         .endCell();
   }
 
@@ -140,38 +149,13 @@ public class JettonWalletStableCoin implements Contract {
         .endCell();
   }
 
-  /**
-   * Note, status==0 means unlocked - user can freely transfer and receive jettons (only admin can
-   * burn). (status and 1) bit means user can not send jettons (status and 2) bit means user can not
-   * receive jettons. Master (minter) smart-contract able to make outgoing actions (transfer, burn
-   * jettons) with any status.
-   */
-  public static Cell createStatusBody(long queryId, int status) {
-    return CellBuilder.beginCell()
-        .storeUint(new BigInteger("eed236d3", 16), 32)
-        .storeUint(queryId, 64)
-        .storeUint(status, 4)
-        .endCell();
-  }
-
-  public static Cell createCallToBody(
-      long queryId, Address destination, BigInteger tonAmount, Cell payload) {
-    return CellBuilder.beginCell()
-        .storeUint(0x235caf52, 32)
-        .storeUint(queryId, 64)
-        .storeAddress(destination)
-        .storeCoins(tonAmount)
-        .storeRef(payload)
-        .endCell();
-  }
-
-  public JettonWalletData getData() {
+  public JettonWalletDataV2 getData() {
     if (nonNull(tonCenterClient)) {
       try {
         // Use TonCenter API to get jetton wallet data
         RunGetMethodResponse response =
             tonCenterClient
-                .runGetMethod(getAddress().toBounceable(), "get_wallet_data", new ArrayList<>())
+                .runGetMethod(address.toBounceable(), "get_wallet_data", new ArrayList<>())
                 .getResult();
 
         // Parse the response
@@ -192,7 +176,7 @@ public class JettonWalletStableCoin implements Contract {
         Cell jettonWalletCode =
             CellBuilder.beginCell().fromBoc(Utils.base64ToBytes(codeHex)).endCell();
 
-        return JettonWalletData.builder()
+        return JettonWalletDataV2.builder()
             .balance(balance)
             .ownerAddress(ownerAddress)
             .jettonMinterAddress(jettonMinterAddress)
@@ -202,7 +186,7 @@ public class JettonWalletStableCoin implements Contract {
         throw new Error("Error getting jetton wallet data: " + e.getMessage());
       }
     } else if (nonNull(adnlLiteClient)) {
-      RunMethodResult runMethodResult = adnlLiteClient.runMethod(getAddress(), "get_wallet_data");
+      RunMethodResult runMethodResult = adnlLiteClient.runMethod(address, "get_wallet_data");
       BigInteger balance = runMethodResult.getIntByIndex(0);
       VmCellSlice slice = runMethodResult.getSliceByIndex(1);
       Address ownerAddress =
@@ -212,7 +196,7 @@ public class JettonWalletStableCoin implements Contract {
           CellSlice.beginParse(slice.getCell()).skipBits(slice.getStBits()).loadAddress();
 
       Cell jettonWalletCode = runMethodResult.getCellByIndex(3);
-      return JettonWalletData.builder()
+      return JettonWalletDataV2.builder()
           .balance(balance)
           .ownerAddress(ownerAddress)
           .jettonMinterAddress(jettonMinterAddress)
@@ -248,7 +232,7 @@ public class JettonWalletStableCoin implements Contract {
         CellBuilder.beginCell()
             .fromBoc(Utils.base64ToBytes(jettonWallet.getCell().getBytes()))
             .endCell();
-    return JettonWalletData.builder()
+    return JettonWalletDataV2.builder()
         .balance(balance)
         .ownerAddress(ownerAddress)
         .jettonMinterAddress(jettonMinterAddress)
@@ -262,17 +246,17 @@ public class JettonWalletStableCoin implements Contract {
         // Use TonCenter API to get jetton wallet balance
         RunGetMethodResponse response =
             tonCenterClient
-                .runGetMethod(getAddress().toBounceable(), "get_wallet_data", new ArrayList<>())
+                .runGetMethod(address.toBounceable(), "get_wallet_data", new ArrayList<>())
                 .getResult();
 
         // Parse the balance from the response
-        String balanceHex = ((String) new java.util.ArrayList<>(response.getStack().get(0)).get(1));
+        String balanceHex = ((String) new ArrayList<>(response.getStack().get(0)).get(1));
         return new BigInteger(balanceHex.substring(2), 16);
       } catch (Exception e) {
         throw new Error("Error getting jetton wallet balance: " + e.getMessage());
       }
     } else if (nonNull(adnlLiteClient)) {
-      RunMethodResult runMethodResult = adnlLiteClient.runMethod(getAddress(), "get_wallet_data");
+      RunMethodResult runMethodResult = adnlLiteClient.runMethod(address, "get_wallet_data");
       return runMethodResult.getIntByIndex(0);
     }
 
@@ -284,5 +268,74 @@ public class JettonWalletStableCoin implements Contract {
 
     TvmStackEntryNumber balanceNumber = (TvmStackEntryNumber) result.getStack().get(0);
     return balanceNumber.getNumber();
+  }
+
+  public BigInteger getStatus() {
+    if (nonNull(tonCenterClient)) {
+      try {
+        // Use TonCenter API to get jetton wallet balance
+        RunGetMethodResponse response =
+            tonCenterClient
+                .runGetMethod(address.toBounceable(), "get_status", new ArrayList<>())
+                .getResult();
+
+        // Parse the balance from the response
+        String balanceHex = ((String) new ArrayList<>(response.getStack().get(0)).get(1));
+        return new BigInteger(balanceHex.substring(2), 16);
+      } catch (Exception e) {
+        throw new Error("Error getting jetton wallet status: " + e.getMessage());
+      }
+    } else if (nonNull(adnlLiteClient)) {
+      RunMethodResult runMethodResult = adnlLiteClient.runMethod(address, "get_status");
+      return runMethodResult.getIntByIndex(0);
+    }
+
+    RunResult result = tonlib.runMethod(address, "get_status");
+
+    if (result.getExit_code() != 0) {
+      throw new Error("method get_status, returned an exit code " + result.getExit_code());
+    }
+
+    TvmStackEntryNumber balanceNumber = (TvmStackEntryNumber) result.getStack().get(0);
+    return balanceNumber.getNumber();
+  }
+
+  public static Cell packJettonWalletData(
+      int status, BigInteger balance, Address ownerAddress, Address jettonMasterAddress) {
+    return CellBuilder.beginCell()
+        .storeUint(status, 4)
+        .storeCoins(balance)
+        .storeAddress(ownerAddress)
+        .storeAddress(jettonMasterAddress)
+        .endCell();
+  }
+
+  public static Cell calculateJettonWalletStateInit(
+      Address ownerAddress, Address jettonMasterAddress, Cell jettonWalletCode) {
+    return CellBuilder.beginCell()
+        .storeUint(0, 2) // 0b00 - No split_depth; No special
+        .storeRefMaybe(jettonWalletCode)
+        .storeRefMaybe(packJettonWalletData(0, BigInteger.ZERO, ownerAddress, jettonMasterAddress))
+        .storeUint(0, 1) // Empty libraries
+        .endCell();
+  }
+
+  public static Cell calculateJettonWalletAddress(int wc, Cell stateInit) {
+    return CellBuilder.beginCell()
+        .storeUint(4, 3) // 0b100 = addr_std$10 tag; No anycast
+        .storeInt(wc, 8)
+        .storeBytes(stateInit.getHash())
+        .endCell();
+  }
+
+  public static Address calculateUserJettonWalletAddress(
+      int wc, Address ownerAddress, Address jettonMasterAddress, Cell jettonWalletCode) {
+    Cell cell =
+        calculateJettonWalletAddress(
+            wc,
+            calculateJettonWalletStateInit(ownerAddress, jettonMasterAddress, jettonWalletCode));
+    CellSlice cs = CellSlice.beginParse(cell);
+    cs.skipBits(3);
+    return Address.of(Address.BOUNCEABLE_TAG, cs.loadUint(8).intValue(), cs.loadBytes(256));
   }
 }
