@@ -95,7 +95,8 @@ public class TonCenter {
       // Set endpoint based on network if not explicitly set
       if (this.endpoint == null
           || this.endpoint.equals(Network.MAINNET.getEndpoint())
-          || this.endpoint.equals(Network.TESTNET.getEndpoint())) {
+          || this.endpoint.equals(Network.TESTNET.getEndpoint())
+          || this.endpoint.equals(Network.MY_LOCAL_TON.getEndpoint())) {
         this.endpoint = network.getEndpoint();
       }
       return this;
@@ -107,6 +108,10 @@ public class TonCenter {
 
     public TonCenterBuilder testnet() {
       return network(Network.TESTNET);
+    }
+
+    public TonCenterBuilder mylocalton() {
+      return network(Network.MY_LOCAL_TON);
     }
 
     /**

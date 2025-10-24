@@ -6,7 +6,13 @@ public enum Network {
   MAINNET("https://toncenter.com/api/v2"),
 
   /** TON Testnet - test network for development */
-  TESTNET("https://testnet.toncenter.com/api/v2");
+  TESTNET("https://testnet.toncenter.com/api/v2"),
+
+  /**
+   * <a href="https://github.com/neodix42/mylocalton-docker">MyLocalTon</a> - localhost TON test
+   * network for development.
+   */
+  MY_LOCAL_TON("http://localhost:8082");
 
   private final String endpoint;
 
