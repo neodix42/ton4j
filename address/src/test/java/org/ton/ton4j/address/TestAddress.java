@@ -23,6 +23,8 @@ public class TestAddress {
   public static final String TEST_ADDRESS_5 =
       "-1:cdff07eb154c2e595930a6a9a4451608251cc1c894686c4c110894de43c96ad3";
 
+  public static final String TEST_ADDRESS_6 = "0f8i9Tt9mros70R1X3B4sBYUzU3eI4ihcpwsOGz4+YmK/rsL";
+
   @Test
   public void testAddress() {
 
@@ -137,5 +139,17 @@ public class TestAddress {
     assertThat(Address.of(TEST_ADDRESS_3).isWallet()).isTrue();
     //        assertThat(Address.of(TEST_ADDRESS_4).isWallet).isTrue();
     assertThat(Address.of(TEST_ADDRESS_5).isWallet()).isTrue();
+  }
+
+  @Test
+  public void testAddressFlags() {
+
+    Address address01 = Address.of(TEST_ADDRESS_0);
+    assertThat(address01.isUserFriendly()).isTrue();
+    assertThat(address01.isUrlSafe()).isTrue();
+
+    Address address06 = Address.of(TEST_ADDRESS_6);
+    assertThat(address06.isUserFriendly()).isTrue();
+    assertThat(address06.isUrlSafe()).isFalse();
   }
 }

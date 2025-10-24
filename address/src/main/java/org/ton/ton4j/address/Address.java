@@ -54,11 +54,13 @@ public class Address implements Serializable {
       throw new IllegalArgumentException("Address is null");
     }
 
+    boolean urlSafe = false;
+
     // Process URL-safe format if needed
     boolean hasColon = address.indexOf(':') != -1;
     if (!hasColon) {
       if (address.indexOf('-') != -1 || address.indexOf('_') != -1) {
-        setFlag(FLAG_URL_SAFE, true);
+        urlSafe = true;
         // Convert to unsafe URL format
         address = address.replace('-', '+').replace('_', '/');
       }
@@ -69,11 +71,15 @@ public class Address implements Serializable {
       parseRawAddress(address);
     } else {
       // User-friendly format
-      setFlag(FLAG_USER_FRIENDLY, true);
+
       Address parseResult = parseFriendlyAddress(address);
       wc = parseResult.wc;
       hashPart = parseResult.hashPart;
       flags = parseResult.flags; // Copy all flags from parsed result
+      setFlag(FLAG_USER_FRIENDLY, true);
+      if (urlSafe) {
+        setFlag(FLAG_URL_SAFE, true);
+      }
     }
   }
 
