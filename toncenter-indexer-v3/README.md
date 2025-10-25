@@ -48,11 +48,11 @@ TonCenterV3 client = TonCenterV3.builder()
 
 // Get masterchain info
 MasterchainInfo info = client.getMasterchainInfo();
-System.out.println("Last block: " + info.getLast().getSeqno());
+log.info("Last block: {}", info.getLast().getSeqno());
 
 // Get account states
-List<String> addresses = Arrays.asList("EQCkR1cGmnsE45N4K0otPl5EnxnRakmGqeJUNua5fkWhales");
-AccountStatesResponse states = client.getAccountStates(addresses, true);
+List<String> addresses = Collections.singletonList(TEST_ADDRESS);
+AccountStatesResponse response = client.getAccountStates(addresses, true);
 
 // Get transactions
 TransactionsResponse txs = client.getTransactions(
@@ -307,44 +307,19 @@ try {
 }
 ```
 
-## Testing
-
-Run tests with Maven:
-
-```bash
-# Run all tests (requires API key)
-export TONCENTER_API_KEY=your-api-key
-mvn test
-
-# Run specific test
-mvn test -Dtest=TonCenterV3Test#testGetMasterchainInfo
-```
-
 ## Architecture
 
 - **TonCenterV3**: Main client class with builder pattern
-- **Network**: Enum for network selection (MAINNET, TESTNET)
+- **Network**: Enum for network selection (`MAINNET, TESTNET, MY_LOCAL_TON`)
 - **ResponseModels**: All response model classes
 - **CommonModels**: Shared model classes (Block, Transaction, Message, etc.)
 - **TonCenterException**: Base exception class
 - **TonCenterApiException**: API-specific exception with error codes
 
-## Dependencies
-
-- OkHttp 4.x - HTTP client
-- Gson 2.x - JSON serialization
-- Lombok - Reduce boilerplate code
-- SLF4J - Logging facade
-
-## License
-
-GNU General Public License v3.0
-
 ## Links
 
 - [TonCenter API Documentation](https://toncenter.com/api/v3/)
 - [TON Documentation](https://ton.org/docs)
-- [GitHub Repository](https://github.com/neodix42/ton4j)
 
 ## Contributing
 

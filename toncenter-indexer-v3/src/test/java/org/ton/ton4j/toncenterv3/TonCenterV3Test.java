@@ -20,7 +20,12 @@ import org.ton.ton4j.toncenterv3.model.ResponseModels.*;
 @Slf4j
 public class TonCenterV3Test {
 
-  private static final String TEST_ADDRESS =
+  public static final String MAINNET_API_KEY =
+      "65126352a1859d70f3dd8846213075fa030de9c0e1a3f0dcab2b9c76cb9d2a88";
+  public static final String TESTNET_API_KEY =
+      "188b29e2b477d8bb95af5041f75c57b62653add1170634f148ac71d7751d0c71";
+
+  public static final String TEST_ADDRESS =
       "0:a44757069a7b04e393782b4a2d3e5e449f19d16a4986a9e25436e6b97e45a16a";
   private static final String API_KEY = System.getenv("TONCENTER_API_KEY");
   public static final String MAINNET_ROOT_DNS_ADDRESS =

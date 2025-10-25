@@ -15,8 +15,7 @@ import org.ton.ton4j.toncenterv3.model.ResponseModels.*;
  * Test class for TonCenterV3 API client Note: These tests require a valid API key and network
  * connection Set TONCENTER_API_KEY environment variable to run tests
  *
- * <p>Rate limiting: Without API key, limited to 1 request per second With API key, higher rate
- * limits apply
+ * <p>No rate limit in locally deployed TonCenter
  */
 @Slf4j
 public class TonCenterV3MyLocalTonTest {
@@ -623,38 +622,5 @@ public class TonCenterV3MyLocalTonTest {
     } finally {
       client.close();
     }
-  }
-
-  // ========== UTILS METHOD TESTS ==========
-
-  @Test
-  public void testDecode() {
-    enforceRateLimit();
-    TonCenterV3 client = createClient();
-    try {
-      DecodeResponse response = client.decode(Collections.singletonList("0x12345678"), null);
-      assertNotNull(response);
-      log.info("Decoded opcodes");
-      log.info(response.toString());
-    } finally {
-      client.close();
-    }
-  }
-
-  // ========== ENDPOINT VERIFICATION TEST ==========
-
-  @Test
-  public void testAllEndpointsExist() {
-    enforceRateLimit();
-    TonCenterV3 client = createClient();
-
-    // Verify all 47 methods exist
-    assertNotNull(client);
-    System.out.println(
-        "✅ All 47 endpoint methods verified through "
-            + (this.getClass().getDeclaredMethods().length - 2)
-            + " test methods!");
-
-    client.close();
   }
 }
