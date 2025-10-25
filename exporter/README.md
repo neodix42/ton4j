@@ -9,7 +9,7 @@ Java Exporter module uses RocksDB JNI library to directly access and extract dat
 <dependency>
     <groupId>io.github.neodix42</groupId>
     <artifactId>exporter</artifactId>
-    <version>1.2.1</version>
+    <version>1.3.1</version>
 </dependency>
 ```
 
@@ -20,7 +20,7 @@ Java Exporter module uses RocksDB JNI library to directly access and extract dat
 <dependency>
     <groupId>io.github.neodix42.ton4j</groupId>
     <artifactId>exporter</artifactId>
-    <version>1.2.1</version>
+    <version>1.3.1</version>
 </dependency>
 ```
 

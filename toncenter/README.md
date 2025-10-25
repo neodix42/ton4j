@@ -24,7 +24,7 @@ Add the dependency to your `pom.xml`:
 <dependency>
     <groupId>io.github.neodix42</groupId>
     <artifactId>toncenter</artifactId>
-    <version>1.2.1</version>
+    <version>1.3.1</version>
 </dependency>
 ```
 
@@ -35,7 +35,7 @@ Add the dependency to your `pom.xml`:
 <dependency>
     <groupId>io.github.neodix42.ton4j</groupId>
     <artifactId>tonlib</artifactId>
-    <version>1.2.1</version>
+    <version>1.3.1</version>
 </dependency>
 ```
 
