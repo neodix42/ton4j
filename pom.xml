@@ -29,6 +29,7 @@
         <module>adnl</module>
         <module>toncenter</module>
         <module>exporter</module>
+        <module>toncenter-indexer-v3</module>
     </modules>
 
     <properties>
