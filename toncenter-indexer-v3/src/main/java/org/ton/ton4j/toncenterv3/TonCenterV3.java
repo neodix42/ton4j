@@ -785,14 +785,14 @@ public class TonCenterV3 {
   // ========== MULTISIG METHODS ==========
 
   public MultisigResponse getMultisigWallets(
-      List<String> address,
+      List<String> multisigAddress,
       List<String> walletAddress,
       Integer limit,
       Integer offset,
       String sort,
       Boolean includeOrders) {
     Map<String, Object> params = new HashMap<>();
-    if (nonNull(address)) params.put("address", address);
+    if (nonNull(multisigAddress)) params.put("address", multisigAddress);
     if (nonNull(walletAddress)) params.put("wallet_address", walletAddress);
     if (nonNull(limit)) params.put("limit", limit);
     if (nonNull(offset)) params.put("offset", offset);
@@ -804,14 +804,14 @@ public class TonCenterV3 {
   }
 
   public MultisigOrderResponse getMultisigOrders(
-      List<String> address,
+      List<String> orderAddress,
       List<String> multisigAddress,
       Boolean parseActions,
       Integer limit,
       Integer offset,
       String sort) {
     Map<String, Object> params = new HashMap<>();
-    if (nonNull(address)) params.put("address", address);
+    if (nonNull(orderAddress)) params.put("address", orderAddress);
     if (nonNull(multisigAddress)) params.put("multisig_address", multisigAddress);
     if (nonNull(parseActions)) params.put("parse_actions", parseActions);
     if (nonNull(limit)) params.put("limit", limit);

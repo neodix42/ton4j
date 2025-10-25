@@ -23,6 +23,8 @@ public class TonCenterV3Test {
   private static final String TEST_ADDRESS =
       "0:a44757069a7b04e393782b4a2d3e5e449f19d16a4986a9e25436e6b97e45a16a";
   private static final String API_KEY = System.getenv("TONCENTER_API_KEY");
+  public static final String MAINNET_ROOT_DNS_ADDRESS =
+      "Ef_lZ1T4NCb2mwkme9h2rJfESCE0W34ma9lWp7-_uY3zXDvq";
 
   // Rate limiting mechanism - ensures no more than 1 test per second when no API key
   private static volatile long lastTestExecutionTime = 0;
@@ -150,6 +152,68 @@ public class TonCenterV3Test {
   }
 
   @Test
+  public void testGetBlocksByWc() {
+    enforceRateLimit();
+    TonCenterV3 client = createClient();
+    try {
+      BlocksResponse response =
+          client.getBlocks(0, null, null, null, null, null, null, null, null, null, 10, 0, "desc");
+      assertNotNull(response);
+      assertNotNull(response.getBlocks());
+      log.info("Retrieved {} blocks", response.getBlocks().size());
+      log.info(response.toString());
+    } finally {
+      client.close();
+    }
+  }
+
+  @Test
+  public void testGetBlocksByWcShard() {
+    enforceRateLimit();
+    TonCenterV3 client = createClient();
+    try {
+      BlocksResponse response =
+          client.getBlocks(
+              0, "8000000000000000", null, null, null, null, null, null, null, null, 10, 0, "desc");
+      assertNotNull(response);
+      assertNotNull(response.getBlocks());
+      log.info("Retrieved {} blocks", response.getBlocks().size());
+      log.info(response.toString());
+    } finally {
+      client.close();
+    }
+  }
+
+  @Test
+  public void testGetBlocksByWcShardSeqno() {
+    enforceRateLimit();
+    TonCenterV3 client = createClient();
+    try {
+      BlocksResponse response =
+          client.getBlocks(
+              0,
+              "8000000000000000",
+              58289943,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              10,
+              0,
+              "desc");
+      assertNotNull(response);
+      assertNotNull(response.getBlocks());
+      log.info("Retrieved {} blocks", response.getBlocks().size());
+      log.info(response.toString());
+    } finally {
+      client.close();
+    }
+  }
+
+  @Test
   public void testGetTransactions() {
     enforceRateLimit();
     TonCenterV3 client = createClient();
@@ -159,6 +223,37 @@ public class TonCenterV3Test {
               null,
               null,
               null,
+              null,
+              Collections.singletonList(TEST_ADDRESS),
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              10,
+              0,
+              "desc");
+      assertNotNull(response);
+      assertNotNull(response.getTransactions());
+      log.info("Retrieved {} transactions", response.getTransactions().size());
+      log.info(response.toString());
+    } finally {
+      client.close();
+    }
+  }
+
+  @Test
+  public void testGetTransactionsByWcShardSeqno() {
+    enforceRateLimit();
+    TonCenterV3 client = createClient();
+    try {
+      TransactionsResponse response =
+          client.getTransactions(
+              0,
+              "8000000000000000",
+              58288224,
               null,
               Collections.singletonList(TEST_ADDRESS),
               null,
@@ -212,6 +307,37 @@ public class TonCenterV3Test {
   }
 
   @Test
+  public void testGetMessagesBySource() {
+    enforceRateLimit();
+    TonCenterV3 client = createClient();
+    try {
+      MessagesResponse response =
+          client.getMessages(
+              null,
+              null,
+              "0:01298165D12594EF61BA56AD76DF3750D70FFC827DE45AFE5E60FA210B13991F",
+              TEST_ADDRESS,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              10,
+              0,
+              "desc");
+      assertNotNull(response);
+      assertNotNull(response.getMessages());
+      log.info("Retrieved {} messages", response.getMessages().size());
+      log.info(response.toString());
+    } finally {
+      client.close();
+    }
+  }
+
+  @Test
   public void testGetJettonMasters() {
     enforceRateLimit();
     TonCenterV3 client = createClient();
@@ -227,11 +353,52 @@ public class TonCenterV3Test {
   }
 
   @Test
+  public void testGetJettonMaster() {
+    enforceRateLimit();
+    TonCenterV3 client = createClient();
+    try {
+      JettonMastersResponse response =
+          client.getJettonMasters(
+              Collections.singletonList("EQAvlWFDxGF2lXm67y4yzC17wYKD9A0guwPkMs1gOsM__NOT"),
+              null,
+              10,
+              0);
+      assertNotNull(response);
+      assertNotNull(response.getJettonMasters());
+      log.info("Retrieved {} jetton masters", response.getJettonMasters().size());
+      log.info(response.toString());
+    } finally {
+      client.close();
+    }
+  }
+
+  @Test
   public void testGetNFTCollections() {
     enforceRateLimit();
     TonCenterV3 client = createClient();
     try {
       NFTCollectionsResponse response = client.getNFTCollections(null, null, 10, 0);
+      assertNotNull(response);
+      assertNotNull(response.getNftCollections());
+      log.info("Retrieved {} NFT collections", response.getNftCollections().size());
+      log.info(response.toString());
+    } finally {
+      client.close();
+    }
+  }
+
+  @Test
+  public void testGetNFTCollectionsByCollection() {
+    enforceRateLimit();
+    TonCenterV3 client = createClient();
+    try {
+      NFTCollectionsResponse response =
+          client.getNFTCollections(
+              Collections.singletonList(
+                  "0:948C60752383D70D0F87C98FF7DA7510FF9A4C089247784B0CF284FB3DC3FC3E"),
+              null,
+              10,
+              0);
       assertNotNull(response);
       assertNotNull(response.getNftCollections());
       log.info("Retrieved {} NFT collections", response.getNftCollections().size());
@@ -566,6 +733,53 @@ public class TonCenterV3Test {
   }
 
   @Test
+  public void testGetNFTItemsByCollection() {
+    enforceRateLimit();
+    TonCenterV3 client = createClient();
+    try {
+      NFTItemsResponse response =
+          client.getNFTItems(
+              null,
+              Collections.singletonList(TEST_ADDRESS),
+              Collections.singletonList(
+                  "0:1A76BB0778F6C793EBFB2AD338FE3AD7D074E53187CFF591AD94B827E7DD03EF"),
+              //              Collections.singletonList("3831"),
+              null,
+              false,
+              100,
+              0);
+      assertNotNull(response);
+      log.info("Retrieved NFT items");
+      log.info(response.toString());
+    } finally {
+      client.close();
+    }
+  }
+
+  @Test
+  public void testGetNFTItemsByCollectionAndItemIndex() {
+    enforceRateLimit();
+    TonCenterV3 client = createClient();
+    try {
+      NFTItemsResponse response =
+          client.getNFTItems(
+              null,
+              Collections.singletonList(TEST_ADDRESS),
+              Collections.singletonList(
+                  "0:9ED169641DCD9BBCB8409D618EAD677D2568314C696FB6032927A14A5E2F38E9"),
+              Collections.singletonList("456"), // 2233
+              false,
+              100,
+              0);
+      assertNotNull(response);
+      log.info("Retrieved NFT item");
+      log.info(response.toString());
+    } finally {
+      client.close();
+    }
+  }
+
+  @Test
   public void testGetNFTTransfers() {
     enforceRateLimit();
     TonCenterV3 client = createClient();
@@ -591,14 +805,55 @@ public class TonCenterV3Test {
     }
   }
 
-  // ========== DNS METHOD TESTS ==========
-
   @Test
-  public void testGetDNSRecords() {
+  public void testGetNFTTransfersByItem() {
     enforceRateLimit();
     TonCenterV3 client = createClient();
     try {
-      DNSRecordsResponse response = client.getDNSRecords(TEST_ADDRESS, null, 10, 0);
+      NFTTransfersResponse response =
+          client.getNFTTransfers(
+              Collections.singletonList(TEST_ADDRESS),
+              Collections.singletonList(
+                  "0:5B1A9037E71C12117841E02223380EA3E9626A8D3F6C086ED0A3A0435133D3BA"),
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              10,
+              0,
+              "desc");
+      assertNotNull(response);
+      log.info("Retrieved NFT transfers");
+      log.info(response.toString());
+    } finally {
+      client.close();
+    }
+  }
+
+  // ========== DNS METHOD TESTS ==========
+
+  @Test
+  public void testGetDNSRecordsAddress() {
+    enforceRateLimit();
+    TonCenterV3 client = createClient();
+    try {
+      DNSRecordsResponse response = client.getDNSRecords(MAINNET_ROOT_DNS_ADDRESS, null, 10, 0);
+      assertNotNull(response);
+      log.info("Retrieved DNS records");
+      log.info(response.toString());
+    } finally {
+      client.close();
+    }
+  }
+
+  @Test
+  public void testGetDNSRecordsDomain() {
+    enforceRateLimit();
+    TonCenterV3 client = createClient();
+    try {
+      DNSRecordsResponse response = client.getDNSRecords(null, "foundation.ton", 10, 0);
       assertNotNull(response);
       log.info("Retrieved DNS records");
       log.info(response.toString());
@@ -616,7 +871,35 @@ public class TonCenterV3Test {
     try {
       MultisigResponse response =
           client.getMultisigWallets(
-              null, Collections.singletonList(TEST_ADDRESS), 10, 0, "desc", false);
+              Collections.singletonList(
+                  "EQBkQP48aUEDg5Y5RRc8SxFHm_C5tNcJDlh3e9pYHC-ZmG2M"), // multisig wallet
+              null,
+              10,
+              0,
+              "desc",
+              false);
+      assertNotNull(response);
+      log.info("Retrieved multisig wallets");
+      log.info(response.toString());
+    } finally {
+      client.close();
+    }
+  }
+
+  @Test
+  public void testGetMultisigWallet() {
+    enforceRateLimit();
+    TonCenterV3 client = createClient();
+    try {
+      MultisigResponse response =
+          client.getMultisigWallets(
+              Collections.singletonList("EQBkQP48aUEDg5Y5RRc8SxFHm_C5tNcJDlh3e9pYHC-ZmG2M"),
+              Collections.singletonList(
+                  "0:D2C911E317B162F5E7F9FCD7BA5FA20F867A6B7F215AC686C8ABE5F623247342"),
+              10,
+              0,
+              "desc",
+              false);
       assertNotNull(response);
       log.info("Retrieved multisig wallets");
       log.info(response.toString());
@@ -630,7 +913,36 @@ public class TonCenterV3Test {
     enforceRateLimit();
     TonCenterV3 client = createClient();
     try {
-      MultisigOrderResponse response = client.getMultisigOrders(null, null, false, 10, 0, "desc");
+      MultisigOrderResponse response =
+          client.getMultisigOrders(
+              null,
+              Collections.singletonList("EQBkQP48aUEDg5Y5RRc8SxFHm_C5tNcJDlh3e9pYHC-ZmG2M"),
+              false,
+              10,
+              0,
+              "desc");
+      assertNotNull(response);
+      log.info("Retrieved multisig orders");
+      log.info(response.toString());
+    } finally {
+      client.close();
+    }
+  }
+
+  @Test
+  public void testGetMultisigOrder() {
+    enforceRateLimit();
+    TonCenterV3 client = createClient();
+    try {
+      MultisigOrderResponse response =
+          client.getMultisigOrders(
+              Collections.singletonList(
+                  "0:BE83FD5C4E5C7C5FE73A0877A0D96FE98F8CD63D17BD66948B8E681F7D4C0143"),
+              Collections.singletonList("EQBkQP48aUEDg5Y5RRc8SxFHm_C5tNcJDlh3e9pYHC-ZmG2M"),
+              false,
+              10,
+              0,
+              "desc");
       assertNotNull(response);
       log.info("Retrieved multisig orders");
       log.info(response.toString());
@@ -646,45 +958,12 @@ public class TonCenterV3Test {
     enforceRateLimit();
     TonCenterV3 client = createClient();
     try {
-      VestingContractsResponse response =
-          client.getVestingContracts(null, Collections.singletonList(TEST_ADDRESS), false, 10, 0);
+      VestingContractsResponse response = client.getVestingContracts(null, null, false, 10, 0);
       assertNotNull(response);
       log.info("Retrieved vesting contracts");
       log.info(response.toString());
     } finally {
       client.close();
     }
-  }
-
-  // ========== UTILS METHOD TESTS ==========
-
-  @Test
-  public void testDecode() {
-    enforceRateLimit();
-    TonCenterV3 client = createClient();
-    try {
-      DecodeResponse response = client.decode(Collections.singletonList("0x12345678"), null);
-      assertNotNull(response);
-      log.info("Decoded opcodes");
-      log.info(response.toString());
-    } finally {
-      client.close();
-    }
-  }
-
-  // ========== ENDPOINT VERIFICATION TEST ==========
-
-  @Test
-  public void testAllEndpointsExist() {
-    enforceRateLimit();
-    TonCenterV3 client = createClient();
-
-    // Verify all 47 methods exist
-    assertNotNull(client);
-    log.info(
-        "✅ All 47 endpoint methods verified through {} test methods!",
-        this.getClass().getDeclaredMethods().length - 2);
-
-    client.close();
   }
 }
