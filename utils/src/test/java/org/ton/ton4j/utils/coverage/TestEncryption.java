@@ -1,11 +1,11 @@
-package org.ton.ton4j.utils;
+package org.ton.ton4j.utils.coverage;
 
 import com.iwebpp.crypto.TweetNaclFast;
 import lombok.extern.slf4j.Slf4j;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
+import org.ton.ton4j.utils.Utils;
 
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 
