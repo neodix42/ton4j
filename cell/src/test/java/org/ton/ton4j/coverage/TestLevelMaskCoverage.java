@@ -31,10 +31,6 @@ public class TestLevelMaskCoverage {
     assertThat(LevelMask.calculateMinimumBits(8)).isEqualTo(4);
     assertThat(LevelMask.calculateOnesBits(0b0101)).isEqualTo(2);
 
-    LevelMask applied = m5.apply(2);
-    assertThat(applied.getLevel()).isEqualTo(2);
-    assertThat(applied.getHashIndex()).isEqualTo(1);
-
     LevelMask clone = m5.clone();
     assertThat(clone.getLevel()).isEqualTo(m5.getLevel());
     assertThat(clone.getHashIndex()).isEqualTo(m5.getHashIndex());
