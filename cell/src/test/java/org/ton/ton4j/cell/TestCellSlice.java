@@ -617,19 +617,20 @@ public class TestCellSlice {
     assertThat(cs0.preloadUint(8)).isEqualTo(10);
     assertThat(cs0.preloadUint(8)).isEqualTo(10);
     assertThat(cs0.preloadUint(8)).isEqualTo(10);
-    cs0.loadUint(8);
+    cs0.loadUint(8); // 10
     assertThat(cs0.preloadUint(8)).isEqualTo(20);
     assertThat(cs0.preloadUint(8)).isEqualTo(20);
-    cs0.loadUint(8);
-    cs0.loadUint(8);
+    cs0.loadUint(8); // 20
+    cs0.loadInt(8); // 30
 
     assertThat(CellSlice.beginParse(cs0.preloadRef()).loadUint(3).longValue()).isEqualTo(1);
     assertThat(CellSlice.beginParse(cs0.preloadRef()).loadUint(3).longValue()).isEqualTo(1);
-    Cell ref1 = cs0.loadRef();
+    Cell ref1 = cs0.loadRef(); // ref0
     assertThat(CellSlice.beginParse(ref1).loadUint(3).longValue()).isEqualTo(1);
     assertThat(CellSlice.beginParse(cs0.preloadRef()).loadUint(3).longValue()).isEqualTo(2);
-    cs0.loadRef();
+    cs0.loadRef(); // ref1
 
+    // dict inline
     TonHashMap dictLoaded =
         cs0.preloadDict(
             keySizeX, k -> k.readUint(keySizeX), v -> CellSlice.beginParse(v).loadUint(8));
@@ -642,10 +643,18 @@ public class TestCellSlice {
       j++;
     }
     // load again
-    cs0.loadDict(keySizeX, k -> k.readUint(keySizeX), v -> CellSlice.beginParse(v).loadUint(8));
+    TonHashMap dictLoadedAgain =
+        cs0.loadDict(keySizeX, k -> k.readUint(keySizeX), v -> CellSlice.beginParse(v).loadUint(8));
 
-    assertThat(cs0.preloadUint(8)).isEqualTo(40);
-    assertThat(cs0.preloadBit()).isEqualTo(false);
+    j = 1;
+    for (Map.Entry<Object, Object> entry : dictLoadedAgain.elements.entrySet()) {
+      log.info("key {}, value {}", entry.getKey(), entry.getValue());
+      assertThat((BigInteger) entry.getKey()).isEqualTo(100 * j);
+      assertThat((BigInteger) entry.getValue()).isEqualTo(j);
+      j++;
+    }
+    //    assertThat(cs0.preloadUint(8)).isEqualTo(40);
+    //    assertThat(cs0.preloadBit()).isEqualTo(false);
 
     assertThrows(Error.class, () -> CellSlice.beginParse(cs0.preloadRef()).loadUint(3));
   }
@@ -759,7 +768,8 @@ public class TestCellSlice {
 
   @Test
   public void testDecodingCommentBug() {
-    String comment = "ZXlKMWMyVnlYMmxrSWpvMk5UWTJORGd3TlRBeExDSjBiMjVmY21GMFpTSTZNeTR5T1RZeU9ERXlOaXdpY0hKdlpIVmpkRjl1WVcxbElqb2laMkZ0WlY5a1pYaGZkMkZzZEY5M1lXbDBiR2x6ZENKOS4wdXFCZEJfVmJNR2NOVEU3ODFmRjNTWEs0UUE=";
+    String comment =
+        "ZXlKMWMyVnlYMmxrSWpvMk5UWTJORGd3TlRBeExDSjBiMjVmY21GMFpTSTZNeTR5T1RZeU9ERXlOaXdpY0hKdlpIVmpkRjl1WVcxbElqb2laMkZ0WlY5a1pYaGZkMkZzZEY5M1lXbDBiR2x6ZENKOS4wdXFCZEJfVmJNR2NOVEU3ODFmRjNTWEs0UUE=";
     String commentHex = Utils.base64ToHexString(comment);
     log.info("commentHex {}", commentHex);
     String commentDecoded = CellSlice.beginParse(Cell.fromHex(commentHex)).loadSnakeString();

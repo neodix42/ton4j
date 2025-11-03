@@ -13,19 +13,19 @@ import java.util.Map;
 @Builder
 @Data
 public class TonSdkTestCases implements Serializable {
-    private Map<String, TestCase> testCases;
+  private Map<String, TestCase> testCases;
 
-    @Setter
-    @Getter
-    public static class TestCase {
+  @Setter
+  @Getter
+  public static class TestCase {
 
-        private String description;
-        private Map<String, Object> input;
-        private Map<String, Object> expectedOutput;
+    private String description;
+    private Map<String, Object> input;
+    private Map<String, Object> expectedOutput;
 
-        @Override
-        public String toString() {
-            return ToStringBuilder.reflectionToString(this, ToStringStyle.MULTI_LINE_STYLE);
-        }
+    @Override
+    public String toString() {
+      return ToStringBuilder.reflectionToString(this, ToStringStyle.MULTI_LINE_STYLE);
     }
+  }
 }

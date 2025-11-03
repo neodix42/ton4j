@@ -245,7 +245,7 @@ public class CellBuilder {
 
   public CellBuilder storeBitString(BitString bitString, int bits) {
     checkBitsOverflow(bits);
-    BitString temp = bitString.readBits(267);
+    BitString temp = bitString.readBits(bits);
     cell.bits.writeBitString(temp.clone());
     return this;
   }

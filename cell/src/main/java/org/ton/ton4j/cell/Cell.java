@@ -7,6 +7,7 @@ import static org.ton.ton4j.cell.CellType.UNKNOWN;
 
 import java.io.Serializable;
 import java.math.BigInteger;
+import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -481,22 +482,26 @@ public class Cell implements Serializable {
     }
     byte[] reachBocMagicPrefix = Utils.hexToSignedBytes("B5EE9C72");
 
-    UnsignedByteReader r = new UnsignedByteReader(data);
-    if (!Utils.compareBytes(reachBocMagicPrefix, r.readBytes(4))) {
+    ByteBuffer r = ByteBuffer.wrap(data);
+    byte[] t = new byte[4];
+    r.get(t);
+    if (!Utils.compareBytes(reachBocMagicPrefix, t)) {
       throw new Error("Invalid boc magic header");
     }
 
-    BocFlags bocFlags = parseBocFlags(r.readSignedByte());
-    int dataSizeBytes = r.readByte(); // off_bytes:(## 8) { off_bytes <= 8 }
+    BocFlags bocFlags = parseBocFlags(r.get());
+    int dataSizeBytes = r.get(); // off_bytes:(## 8) { off_bytes <= 8 }
 
-    long cellsNum =
-        Utils.dynInt(r.readSignedBytes(bocFlags.cellNumSizeBytes)); // cells:(##(size * 8))
-    long rootsNum =
-        Utils.dynInt(
-            r.readSignedBytes(bocFlags.cellNumSizeBytes)); // roots:(##(size * 8)) { roots >= 1 }
+    t = new byte[bocFlags.cellNumSizeBytes];
+    r.get(t);
+    long cellsNum = Utils.dynInt(t); // cells:(##(size * 8))
+    r.get(t);
+    long rootsNum = Utils.dynInt(t); // roots:(##(size * 8)) { roots >= 1 }
 
-    r.readBytes(bocFlags.cellNumSizeBytes);
-    long dataLen = Utils.dynInt(r.readSignedBytes(dataSizeBytes));
+    r.get(t);
+    t = new byte[dataSizeBytes];
+    r.get(t);
+    long dataLen = Utils.dynInt(t);
 
     if (bocFlags.hasCrc32c) {
       byte[] bocWithoutCrc = Arrays.copyOfRange(data, 0, data.length - 4);
@@ -509,7 +514,9 @@ public class Cell implements Serializable {
 
     int[] rootsIndex = new int[(int) rootsNum];
     for (int i = 0; i < rootsNum; i++) {
-      rootsIndex[i] = Utils.dynInt(r.readSignedBytes(bocFlags.cellNumSizeBytes));
+      t = new byte[bocFlags.cellNumSizeBytes];
+      r.get(t);
+      rootsIndex[i] = Utils.dynInt(t);
     }
 
     if (bocFlags.hasCacheBits && !bocFlags.hasIndex) {
@@ -520,7 +527,9 @@ public class Cell implements Serializable {
     int j = 0;
     if (bocFlags.hasIndex) {
       index = new int[(int) cellsNum];
-      byte[] idxData = r.readSignedBytes(cellsNum * dataSizeBytes);
+      t = new byte[Math.toIntExact(cellsNum * dataSizeBytes)];
+      r.get(t);
+      byte[] idxData = t;
 
       for (int i = 0; i < cellsNum; i++) {
         int off = i * dataSizeBytes;
@@ -537,7 +546,8 @@ public class Cell implements Serializable {
           "cells num looks malicious: data len " + Arrays.toString(data) + ", cells " + cellsNum);
     }
 
-    byte[] payload = r.readBytes(dataLen);
+    byte[] payload = new byte[Math.toIntExact(dataLen)];
+    r.get(payload);
 
     return parseCells(rootsIndex, rootsNum, cellsNum, bocFlags.cellNumSizeBytes, payload, index);
   }

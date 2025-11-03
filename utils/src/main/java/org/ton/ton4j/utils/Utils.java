@@ -1739,20 +1739,6 @@ public class Utils {
     }
   }
 
-  public static BigInteger signedBytesArrayToBigInteger(int[] intArray) {
-    // Convert int[] to byte[]
-    byte[] byteArray = new byte[intArray.length * 4]; // Each int is 4 bytes
-    for (int i = 0; i < intArray.length; i++) {
-      byteArray[i * 4] = (byte) (intArray[i] >>> 24); // First byte (most significant byte)
-      byteArray[i * 4 + 1] = (byte) (intArray[i] >>> 16); // Second byte
-      byteArray[i * 4 + 2] = (byte) (intArray[i] >>> 8); // Third byte
-      byteArray[i * 4 + 3] = (byte) (intArray[i]); // Fourth byte (least significant byte)
-    }
-
-    // Create and return BigInteger from byte array
-    return new BigInteger(1, byteArray); // 1 for positive sign
-  }
-
   public static int pad4(int size) {
     int padding = size % 4;
     if (padding != 0) {
