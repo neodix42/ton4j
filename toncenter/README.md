@@ -24,7 +24,7 @@ Add the dependency to your `pom.xml`:
 <dependency>
     <groupId>org.ton.ton4j</groupId>
     <artifactId>toncenter</artifactId>
-    <version>1.3.2</version>
+    <version>1.3.3</version>
 </dependency>
 ```
 
@@ -35,7 +35,7 @@ Add the dependency to your `pom.xml`:
 <dependency>
     <groupId>org.ton.ton4j</groupId>
     <artifactId>tonlib</artifactId>
-    <version>1.3.2</version>
+    <version>1.3.3</version>
 </dependency>
 ```
 

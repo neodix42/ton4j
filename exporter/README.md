@@ -9,7 +9,7 @@ Java Exporter module uses RocksDB JNI library to directly access and extract dat
 <dependency>
     <groupId>org.ton.ton4j</groupId>
     <artifactId>exporter</artifactId>
-    <version>1.3.2</version>
+    <version>1.3.3</version>
 </dependency>
 ```
 
@@ -20,7 +20,7 @@ Java Exporter module uses RocksDB JNI library to directly access and extract dat
 <dependency>
     <groupId>org.ton.ton4j</groupId>
     <artifactId>exporter</artifactId>
-    <version>1.3.2</version>
+    <version>1.3.3</version>
 </dependency>
 ```
 

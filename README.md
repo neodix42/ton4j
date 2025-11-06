@@ -16,7 +16,7 @@ Java libraries and wrapper for interacting with TON blockchain. ton4j requires m
 <dependency>
     <groupId>org.ton.ton4j</groupId>
     <artifactId>smartcontract</artifactId>
-    <version>1.3.2</version>
+    <version>1.3.3</version>
 </dependency>
 ```
 
@@ -37,7 +37,7 @@ Java libraries and wrapper for interacting with TON blockchain. ton4j requires m
 <dependency>
     <groupId>org.ton.ton4j</groupId>
     <artifactId>ton4j</artifactId>
-    <version>1.3.2</version>
+    <version>1.3.3</version>
 </dependency>
 ```
 
