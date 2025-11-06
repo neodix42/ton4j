@@ -5,7 +5,7 @@
 ```xml
 
 <dependency>
-    <groupId>io.github.neodix42</groupId>
+    <groupId>org.ton.ton4j</groupId>
     <artifactId>bitstring</artifactId>
     <version>1.3.2</version>
 </dependency>
@@ -15,7 +15,7 @@
 
 ```xml
 <dependency>
-    <groupId>io.github.neodix42.ton4j</groupId>
+    <groupId>org.ton.ton4j</groupId>
     <artifactId>bitstring</artifactId>
     <version>1.3.2</version>
 </dependency>
@@ -43,9 +43,9 @@ More examples on how to construct [BitString](src/main/java/org/ton/ton4j/bitstr
 found in [TestBitString](../bitstring/src/test/java/org/ton/ton4j/bitstring/TestBitString.java) class.
 
 
-[maven-central-svg]: https://img.shields.io/maven-central/v/io.github.neodix42/bitstring
+[maven-central-svg]: https://img.shields.io/maven-central/v/org.ton.ton4j/bitstring
 
-[maven-central]: https://mvnrepository.com/artifact/io.github.neodix42/bitstring
+[maven-central]: https://mvnrepository.com/artifact/org.ton.ton4j/bitstring
 
 [ton-svg]: https://img.shields.io/badge/Based%20on-TON-blue
 

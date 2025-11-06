@@ -5,7 +5,7 @@
 ```xml
 
 <dependency>
-    <groupId>io.github.neodix42</groupId>
+    <groupId>org.ton.ton4j</groupId>
     <artifactId>cell</artifactId>
     <version>1.3.2</version>
 </dependency>
@@ -16,7 +16,7 @@
 ```xml
 
 <dependency>
-    <groupId>io.github.neodix42.ton4j</groupId>
+    <groupId>org.ton.ton4j</groupId>
     <artifactId>cell</artifactId>
     <version>1.3.2</version>
 </dependency>
@@ -90,9 +90,9 @@ found in [TestCell](../cell/src/test/java/org/ton/ton4j/cell/TestCell.java)
 and [TestBitString](../bitstring/src/test/ton4j/org/ton/ton4j/bitstring/TestBitString.java) classes.
 
 
-[maven-central-svg]: https://img.shields.io/maven-central/v/io.github.neodix42/cell
+[maven-central-svg]: https://img.shields.io/maven-central/v/org.ton.ton4j/cell
 
-[maven-central]: https://mvnrepository.com/artifact/io.github.neodix42/cell
+[maven-central]: https://mvnrepository.com/artifact/org.ton.ton4j/cell
 
 [ton-svg]: https://img.shields.io/badge/Based%20on-TON-blue
 

@@ -7,7 +7,7 @@ Java Emulator wrapper uses JNA to access methods in native emulator shared libra
 ```xml
 
 <dependency>
-    <groupId>io.github.neodix42</groupId>
+    <groupId>org.ton.ton4j</groupId>
     <artifactId>emulator</artifactId>
     <version>1.3.2</version>
 </dependency>
@@ -18,7 +18,7 @@ Java Emulator wrapper uses JNA to access methods in native emulator shared libra
 ```xml
 
 <dependency>
-    <groupId>io.github.neodix42.ton4j</groupId>
+    <groupId>org.ton.ton4j</groupId>
     <artifactId>emulator</artifactId>
     <version>1.3.2</version>
 </dependency>
@@ -32,9 +32,9 @@ See examples in [TestTxEmualtor](../emulator/src/test/java/org/ton/ton4j/emulato
 
 See examples in [TestTxEmualtor](../emulator/src/test/java/org/ton/ton4j/emulator/TestTvmEmulator.java) class.
 
-[maven-central-svg]: https://img.shields.io/maven-central/v/io.github.neodix42/emulator
+[maven-central-svg]: https://img.shields.io/maven-central/v/org.ton.ton4j/emulator
 
-[maven-central]: https://mvnrepository.com/artifact/io.github.neodix42/emulator
+[maven-central]: https://mvnrepository.com/artifact/org.ton.ton4j/emulator
 
 [ton-svg]: https://img.shields.io/badge/Based%20on-TON-blue
 

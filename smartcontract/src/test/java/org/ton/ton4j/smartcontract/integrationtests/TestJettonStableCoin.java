@@ -48,7 +48,7 @@ public class TestJettonStableCoin {
             .nextAdminAddress(Address.of(NEW_ADMIN2))
             .content(
                 NftUtils.createOffChainUriCell(
-                    "https://raw.githubusercontent.com/neodix42/ton4j/main/1-media/neo-jetton.json"))
+                    "https://raw.githubusercontent.com/ton-blockchain/ton4j/main/1-media/neo-jetton.json"))
             .jettonWalletCodeHex(WalletCodes.jettonWalletStableCoin.getValue())
             .build();
 
@@ -241,7 +241,7 @@ public class TestJettonStableCoin {
             .nextAdminAddress(Address.of(NEW_ADMIN2))
             .content(
                 NftUtils.createOffChainUriCell(
-                    "https://raw.githubusercontent.com/neodix42/ton4j/main/1-media/neo-jetton.json"))
+                    "https://raw.githubusercontent.com/ton-blockchain/ton4j/main/1-media/neo-jetton.json"))
             .jettonWalletCodeHex(WalletCodes.jettonWalletStableCoin.getValue())
             .build();
 
@@ -436,7 +436,7 @@ public class TestJettonStableCoin {
             .nextAdminAddress(Address.of(NEW_ADMIN2))
             .content(
                 NftUtils.createOffChainUriCell(
-                    "https://raw.githubusercontent.com/neodix42/ton4j/main/1-media/neo-jetton.json"))
+                    "https://raw.githubusercontent.com/ton-blockchain/ton4j/main/1-media/neo-jetton.json"))
             .jettonWalletCodeHex(WalletCodes.jettonWalletStableCoin.getValue())
             .build();
 

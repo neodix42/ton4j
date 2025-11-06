@@ -55,9 +55,9 @@ public class TestNft extends CommonTest {
             .royalty(0.13)
             .royaltyAddress(adminWallet.getAddress())
             .collectionContentUri(
-                "https://raw.githubusercontent.com/neodiX42/ton4j/main/1-media/nft-collection.json")
+                "https://raw.githubusercontent.com/ton-blockchain/ton4j/main/1-media/nft-collection.json")
             .collectionContentBaseUri(
-                "https://raw.githubusercontent.com/neodiX42/ton4j/main/1-media/")
+                "https://raw.githubusercontent.com/ton-blockchain/ton4j/main/1-media/")
             .nftItemCodeHex(WalletCodes.nftItem.getValue())
             .build();
 
@@ -310,9 +310,9 @@ public class TestNft extends CommonTest {
             .royalty(0.13)
             .royaltyAddress(adminWallet.getAddress())
             .collectionContentUri(
-                "https://raw.githubusercontent.com/neodiX42/ton4j/main/1-media/nft-collection.json")
+                "https://raw.githubusercontent.com/ton-blockchain/ton4j/main/1-media/nft-collection.json")
             .collectionContentBaseUri(
-                "https://raw.githubusercontent.com/neodiX42/ton4j/main/1-media/")
+                "https://raw.githubusercontent.com/ton-blockchain/ton4j/main/1-media/")
             .nftItemCodeHex(WalletCodes.nftItem.getValue())
             .build();
 
@@ -754,9 +754,9 @@ public class TestNft extends CommonTest {
             .royalty(0.13)
             .royaltyAddress(adminWallet.getAddress())
             .collectionContentUri(
-                "https://raw.githubusercontent.com/neodiX42/ton4j/main/1-media/nft-collection.json")
+                "https://raw.githubusercontent.com/ton-blockchain/ton4j/main/1-media/nft-collection.json")
             .collectionContentBaseUri(
-                "https://raw.githubusercontent.com/neodiX42/ton4j/main/1-media/")
+                "https://raw.githubusercontent.com/ton-blockchain/ton4j/main/1-media/")
             .nftItemCodeHex(WalletCodes.nftItem.getValue())
             .build();
 

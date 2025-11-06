@@ -5,7 +5,7 @@
 ```xml
 
 <dependency>
-    <groupId>io.github.neodix42</groupId>
+    <groupId>org.ton.ton4j</groupId>
     <artifactId>tonconnect</artifactId>
     <version>1.3.2</version>
 </dependency>
@@ -16,7 +16,7 @@
 ```xml
 
 <dependency>
-    <groupId>io.github.neodix42.ton4j</groupId>
+    <groupId>org.ton.ton4j</groupId>
     <artifactId>tonconnect</artifactId>
     <version>1.3.2</version>
 </dependency>
@@ -67,9 +67,9 @@ public void testTonConnectExample() throws Exception {
 }
 ```
 
-[maven-central-svg]: https://img.shields.io/maven-central/v/io.github.neodix42/tonconnect
+[maven-central-svg]: https://img.shields.io/maven-central/v/org.ton.ton4j/tonconnect
 
-[maven-central]: https://mvnrepository.com/artifact/io.github.neodix42/tonconnect
+[maven-central]: https://mvnrepository.com/artifact/org.ton.ton4j/tonconnect
 
 [ton-svg]: https://img.shields.io/badge/Based%20on-TON-blue
 

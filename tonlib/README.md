@@ -20,7 +20,7 @@ You can get the latest tonlib library by:
 ```xml
 
 <dependency>
-    <groupId>io.github.neodix42</groupId>
+    <groupId>org.ton.ton4j</groupId>
     <artifactId>tonlib</artifactId>
     <version>1.3.2</version>
 </dependency>
@@ -31,7 +31,7 @@ You can get the latest tonlib library by:
 ```xml
 
 <dependency>
-    <groupId>io.github.neodix42.ton4j</groupId>
+    <groupId>org.ton.ton4j</groupId>
     <artifactId>tonlib</artifactId>
     <version>1.3.2</version>
 </dependency>
@@ -293,9 +293,9 @@ More examples in [TestTonlibJson](../tonlib/src/test/java/org/ton/ton4j/tonlib/T
 You can find more examples in `TestTonlibJson` and `TestParseRunMethodResults` classes.
 
 
-[maven-central-svg]: https://img.shields.io/maven-central/v/io.github.neodix42/tonlib
+[maven-central-svg]: https://img.shields.io/maven-central/v/org.ton.ton4j/tonlib
 
-[maven-central]: https://mvnrepository.com/artifact/io.github.neodix42/tonlib
+[maven-central]: https://mvnrepository.com/artifact/org.ton.ton4j/tonlib
 
 [ton-svg]: https://img.shields.io/badge/Based%20on-TON-blue
 

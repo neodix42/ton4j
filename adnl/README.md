@@ -34,9 +34,9 @@ log.info("init.wc: {}", info.getInit().getWorkchain());
 
 There are lots of examples on how to work with [AdnlLiteClient](src/test/java/org/ton/ton4j/adnl/AdnlLiteClientTest.java).
 
-[maven-central-svg]: https://img.shields.io/maven-central/v/io.github.neodix42/adnl
+[maven-central-svg]: https://img.shields.io/maven-central/v/org.ton.ton4j/adnl
 
-[maven-central]: https://mvnrepository.com/artifact/io.github.neodix42/adnl
+[maven-central]: https://mvnrepository.com/artifact/org.ton.ton4j/adnl
 
 [ton-svg]: https://img.shields.io/badge/Based%20on-TON-blue
 

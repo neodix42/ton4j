@@ -5,7 +5,7 @@
 ```xml
 
 <dependency>
-    <groupId>io.github.neodix42</groupId>
+    <groupId>org.ton.ton4j</groupId>
     <artifactId>tlb</artifactId>
     <version>1.3.2</version>
 </dependency>
@@ -16,7 +16,7 @@
 ```xml
 
 <dependency>
-    <groupId>io.github.neodix42.ton4j</groupId>
+    <groupId>org.ton.ton4j</groupId>
     <artifactId>tlb</artifactId>
     <version>1.3.2</version>
 </dependency>
@@ -61,9 +61,9 @@ created = CurrencyCollection(coins=1700000000, extraCurrencies=()),
 minted = CurrencyCollection(coins=0, extraCurrencies=()))
 ```
 
-[maven-central-svg]: https://img.shields.io/maven-central/v/io.github.neodix42/tlb
+[maven-central-svg]: https://img.shields.io/maven-central/v/org.ton.ton4j/tlb
 
-[maven-central]: https://mvnrepository.com/artifact/io.github.neodix42/tlb
+[maven-central]: https://mvnrepository.com/artifact/org.ton.ton4j/tlb
 
 [ton-svg]: https://img.shields.io/badge/Based%20on-TON-blue
 

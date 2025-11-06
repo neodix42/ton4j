@@ -43,7 +43,7 @@ public class TestTonlibJson {
   String tonlibPath = Utils.getTonlibGithubUrl();
 
   //  static String tonlibPath =
-  //      Utils.getArtifactGithubUrl("tonlibjson", "v2025.03", "neodix42", "ton");
+  //      Utils.getArtifactGithubUrl("tonlibjson", "v2025.03", "ton-blockchain", "ton");
 
   @Test
   public void testTonlibRunMethodActiveElectionId() {

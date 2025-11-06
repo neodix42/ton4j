@@ -61,7 +61,7 @@ public class TestJettonV2 {
             .content(
                 CellBuilder.beginCell()
                     .storeSnakeString(
-                        "https://raw.githubusercontent.com/neodix42/ton4j/main/1-media/neo-jetton.json")
+                        "https://raw.githubusercontent.com/ton-blockchain/ton4j/main/1-media/neo-jetton.json")
                     .endCell())
             .build();
 
@@ -229,7 +229,7 @@ public class TestJettonV2 {
             .content(
                 CellBuilder.beginCell()
                     .storeSnakeString(
-                        "https://raw.githubusercontent.com/neodix42/ton4j/main/1-media/neo-jetton.json")
+                        "https://raw.githubusercontent.com/ton-blockchain/ton4j/main/1-media/neo-jetton.json")
                     .endCell())
             .build();
 
@@ -340,7 +340,7 @@ public class TestJettonV2 {
             .content(
                 CellBuilder.beginCell()
                     .storeSnakeString(
-                        "https://raw.githubusercontent.com/neodix42/ton4j/main/1-media/neo-jetton.json")
+                        "https://raw.githubusercontent.com/ton-blockchain/ton4j/main/1-media/neo-jetton.json")
                     .endCell())
             .build();
 
@@ -515,7 +515,7 @@ public class TestJettonV2 {
             .content(
                 CellBuilder.beginCell()
                     .storeSnakeString(
-                        "https://raw.githubusercontent.com/neodix42/ton4j/main/1-media/neo-jetton.json")
+                        "https://raw.githubusercontent.com/ton-blockchain/ton4j/main/1-media/neo-jetton.json")
                     .endCell())
             .build();
 
@@ -689,7 +689,7 @@ public class TestJettonV2 {
             .content(
                 CellBuilder.beginCell()
                     .storeSnakeString(
-                        "https://raw.githubusercontent.com/neodix42/ton4j/main/1-media/neo-jetton.json")
+                        "https://raw.githubusercontent.com/ton-blockchain/ton4j/main/1-media/neo-jetton.json")
                     .endCell())
             .build();
 

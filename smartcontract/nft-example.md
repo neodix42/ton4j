@@ -12,8 +12,8 @@ NftCollection nftCollection = NftCollection.builder()
         .adminAddress(adminWallet.getAddress())
         .royalty(0.13)
         .royaltyAddress(adminWallet.getAddress())
-        .collectionContentUri("https://raw.githubusercontent.com/neodiX42/ton4j/main/1-media/nft-collection.json")
-        .collectionContentBaseUri("https://raw.githubusercontent.com/neodiX42/ton4j/main/1-media/")
+        .collectionContentUri("https://raw.githubusercontent.com/ton-blockchain/ton4j/main/1-media/nft-collection.json")
+        .collectionContentBaseUri("https://raw.githubusercontent.com/ton-blockchain/ton4j/main/1-media/")
         .nftItemCodeHex(WalletCodes.nftItem.getValue())
         .build();
 

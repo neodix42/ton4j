@@ -1,7 +1,7 @@
 {
   "name": "Neo Jetton",
   "description": "Neo TON Jettons — the future is now.",
-  "image": "https://raw.githubusercontent.com/neodix42/ton4j/main/1-media/neo-jetton.png",
+  "image": "https://raw.githubusercontent.com/ton-blockchain/ton4j/main/1-media/neo-jetton.png",
   "symbol": "NEOJ",
   "decimals": "2"
 }

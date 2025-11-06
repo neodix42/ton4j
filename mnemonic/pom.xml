@@ -4,7 +4,7 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <parent>
         <artifactId>top</artifactId>
-        <groupId>io.github.neodix42</groupId>
+        <groupId>org.ton.ton4j</groupId>
         <version>1.3.2</version>
     </parent>
 
@@ -15,7 +15,7 @@
 
     <description>Help quickly generate and part TON compatible mnemonics.</description>
 
-    <url>https://github.com/neodiX42/ton4j</url>
+    <url>https://github.com/ton-blockchain/ton4j</url>
 
     <licenses>
         <license>
@@ -32,15 +32,15 @@
     </developers>
 
     <scm>
-        <connection>scm:git:git://github.com/neodiX42/ton4j.git</connection>
-        <developerConnection>scm:git:ssh://github.com/neodiX42/ton4j.git</developerConnection>
-        <url>https://github.com/neodiX42/ton4j/tree/main</url>
+        <connection>scm:git:git://github.com/ton-blockchain/ton4j.git</connection>
+        <developerConnection>scm:git:ssh://github.com/ton-blockchain/ton4j.git</developerConnection>
+        <url>https://github.com/ton-blockchain/ton4j/tree/main</url>
     </scm>
 
 
     <dependencies>
         <dependency>
-            <groupId>io.github.neodix42</groupId>
+            <groupId>org.ton.ton4j</groupId>
             <artifactId>utils</artifactId>
             <version>${project.parent.version}</version>
             <scope>test</scope>

@@ -4,7 +4,7 @@
 
 ```xml
 <dependency>
-    <groupId>io.github.neodix42</groupId>
+    <groupId>org.ton.ton4j</groupId>
     <artifactId>smartcontract</artifactId>
     <version>1.3.2</version>
 </dependency>
@@ -14,7 +14,7 @@
 
 ```xml
 <dependency>
-    <groupId>io.github.neodix42.ton4j</groupId>
+    <groupId>org.ton.ton4j</groupId>
     <artifactId>smartcontract</artifactId>
     <version>1.3.2</version>
 </dependency>
@@ -50,9 +50,9 @@ Currently, following wallet versions and revisions are supported:
 More examples on how to work with [smart-contracts](../smartcontract/src/main/java/org/ton/ton4j/smartcontract) can be
 found in [here](../smartcontract/src/test/java/org/ton/ton4j/smartcontract).
 
-[maven-central-svg]: https://img.shields.io/maven-central/v/io.github.neodix42/smartcontract
+[maven-central-svg]: https://img.shields.io/maven-central/v/org.ton.ton4j/smartcontract
 
-[maven-central]: https://mvnrepository.com/artifact/io.github.neodix42/smartcontract
+[maven-central]: https://mvnrepository.com/artifact/org.ton.ton4j/smartcontract
 
 [ton-svg]: https://img.shields.io/badge/Based%20on-TON-blue
 

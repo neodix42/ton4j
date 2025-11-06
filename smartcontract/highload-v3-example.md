@@ -62,7 +62,7 @@ HighloadWalletV3 contract=HighloadWalletV3.builder()
         }
 ```
 
-![Class Diagram](http://www.plantuml.com/plantuml/proxy?src=https://raw.githubusercontent.com/neodix42/ton4j/highload-v3-tests/smartcontract/highload-v3.puml)
+![Class Diagram](http://www.plantuml.com/plantuml/proxy?src=https://raw.githubusercontent.com/ton-blockchain/ton4j/highload-v3-tests/smartcontract/highload-v3.puml)
 
 More examples on how to work with [smart-contracts](../smartcontract/src/main/java/org/ton/ton4j/smartcontract) can be
 found [here](../smartcontract/src/test/java/org/ton/ton4j/smartcontract).

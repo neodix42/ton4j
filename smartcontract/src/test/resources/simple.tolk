@@ -1,43 +1,74 @@
-tolk 0.7
-
 import "@stdlib/gas-payments"
+tolk 1.0
 
-@inline
-fun onInternalMessage(myTonBalance: int, msgValue: int, inMsgFull: cell, inMsgBody: slice) {
-    debugPrint(40);
-    debugPrint(myTonBalance);
-
-    var cs: slice = inMsgFull.beginParse();
-    var flags: int = cs.loadUint(4);
-
-    var senderAddress: slice = cs.loadAddress();
-    var x = inMsgBody.loadUint(32);
-    debugPrint(x);
-    setContractData(beginCell().storeUint(x, 32).endCell());
+struct Storage {
+    id: uint32
+    counter: uint32
 }
 
-@inline
-fun onExternalMessage(inMsgBody: slice) {
-    debugPrint(41);
+fun Storage.load() {
+    return Storage.fromCell(contract.getData())
+}
 
-    var msgSeqno = inMsgBody.loadUint(32);
-    var ds = getContractData().beginParse();
-    var storedSeqno = ds.loadUint(32);
-    var storedUnique = ds.loadUint(32);
+fun Storage.save(self) {
+    contract.setData(self.toCell())
+}
 
-    assert(!(msgSeqno != storedSeqno)) throw 33;
+struct (0x7e8764ef) IncreaseCounter {
+    queryId: uint64  // query id, typically included in messages
+    increaseBy: uint32
+}
 
+struct (0x3a752f06) ResetCounter {
+    queryId: uint64
+}
+
+type AllowedMessage = IncreaseCounter | ResetCounter
+
+fun onExternalMessage(extBody: slice) {
+    var storage = lazy Storage.load();
+    val msgId = extBody.loadUint(32);
+
+    assert (msgId == storage.id) throw 33;
     acceptExternalMessage();
-
-    setContractData(beginCell().storeUint(storedSeqno + 1, 32).storeUint(storedUnique, 32).endCell());
+    storage.id += 1;
+    // commitContractDataAndActions();
+    storage.save();
 }
 
-get seqno(): int {
-    debugPrint(42);
-    return getContractData().beginParse().preloadUint(32);
+fun onInternalMessage(in: InMessage) {
+    val msg = lazy AllowedMessage.fromSlice(in.body);
+
+    match (msg) {
+        IncreaseCounter => {
+            var storage = lazy Storage.load();
+
+            storage.counter += msg.increaseBy;
+            storage.save();
+        }
+
+        ResetCounter => {
+            var storage = lazy Storage.load();
+
+            storage.counter = 0;
+            storage.save();
+        }
+
+        else => {
+            assert (in.body.isEmpty()) throw 0xFFFF
+        }
+    }
 }
 
-get unique(): int {
-    debugPrint(42);
-    return getContractData().beginParse().skipBits(32).preloadUint(32);
+fun onBouncedMessage(in: InMessageBounced) {
+}
+
+get fun currentCounter(): int {
+    val storage = lazy Storage.load();
+    return storage.counter;
+}
+
+get fun initialId(): int {
+    val storage = lazy Storage.load();
+    return storage.id;
 }

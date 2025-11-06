@@ -7,7 +7,7 @@ Java Exporter module uses RocksDB JNI library to directly access and extract dat
 ```xml
 
 <dependency>
-    <groupId>io.github.neodix42</groupId>
+    <groupId>org.ton.ton4j</groupId>
     <artifactId>exporter</artifactId>
     <version>1.3.2</version>
 </dependency>
@@ -18,7 +18,7 @@ Java Exporter module uses RocksDB JNI library to directly access and extract dat
 ```xml
 
 <dependency>
-    <groupId>io.github.neodix42.ton4j</groupId>
+    <groupId>org.ton.ton4j</groupId>
     <artifactId>exporter</artifactId>
     <version>1.3.2</version>
 </dependency>
@@ -227,9 +227,9 @@ Examples:
 
 More examples in [Exporter](../exporter/src/test/java/org/ton/ton4j/exporter) module.
 
-[maven-central-svg]: https://img.shields.io/maven-central/v/io.github.neodix42/emulator
+[maven-central-svg]: https://img.shields.io/maven-central/v/org.ton.ton4j/emulator
 
-[maven-central]: https://mvnrepository.com/artifact/io.github.neodix42/emulator
+[maven-central]: https://mvnrepository.com/artifact/org.ton.ton4j/emulator
 
 [ton-svg]: https://img.shields.io/badge/Based%20on-TON-blue
 

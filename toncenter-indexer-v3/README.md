@@ -17,7 +17,7 @@ Add the dependency to your `pom.xml`:
 
 ```xml
 <dependency>
-    <groupId>io.github.neodix42</groupId>
+    <groupId>org.ton.ton4j</groupId>
     <artifactId>toncenter-indexer-v3</artifactId>
     <version>1.3.2</version>
 </dependency>
@@ -28,7 +28,7 @@ Add the dependency to your `pom.xml`:
 ```xml
 
 <dependency>
-    <groupId>io.github.neodix42.ton4j</groupId>
+    <groupId>org.ton.ton4j</groupId>
     <artifactId>tonlib</artifactId>
     <version>1.3.2</version>
 </dependency>
@@ -329,16 +329,16 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 
 - [TonCenter API Documentation](https://toncenter.com/api/v2/)
 - [TON Documentation](https://ton.org/docs/)
-- [GitHub Issues](https://github.com/neodix42/ton4j/issues)
+- [GitHub Issues](https://github.com/ton-blockchain/ton4j/issues)
 
-[jitpack-svg]: https://jitpack.io/v/neodiX42/ton4j.svg
+[jitpack-svg]: https://jitpack.io/v/ton-blockchain/ton4j.svg
 
-[jitpack]: https://jitpack.io/#neodiX42/ton4j
+[jitpack]: https://jitpack.io/#ton-blockchain/ton4j
 
 [ton-svg]: https://img.shields.io/badge/Based%20on-TON-blue
 
 [ton]: https://ton.org
 
-[maven-central-svg]: https://img.shields.io/maven-central/v/io.github.neodix42/toncenter-indexer-v3
+[maven-central-svg]: https://img.shields.io/maven-central/v/org.ton.ton4j/toncenter-indexer-v3
 
-[maven-central]: https://mvnrepository.com/artifact/io.github.neodix42/toncenter-indexer-v3
+[maven-central]: https://mvnrepository.com/artifact/org.ton.ton4j/toncenter-indexer-v3

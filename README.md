@@ -2,9 +2,9 @@
 
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
 [![Based on TON][ton-svg]][ton]
-![GitHub last commit](https://img.shields.io/github/last-commit/neodiX42/ton4j)
-![](https://tokei.rs/b1/github/neodix42/ton4j?category=code)
-![](https://tokei.rs/b1/github/neodix42/ton4j?category=files)
+![GitHub last commit](https://img.shields.io/github/last-commit/ton-blockchain/ton4j)
+![](https://tokei.rs/b1/github/ton-blockchain/ton4j?category=code)
+![](https://tokei.rs/b1/github/ton-blockchain/ton4j?category=files)
 
 
 Java libraries and wrapper for interacting with TON blockchain. ton4j requires minimum `Java 11`.
@@ -14,7 +14,7 @@ Java libraries and wrapper for interacting with TON blockchain. ton4j requires m
 ```xml
 
 <dependency>
-    <groupId>io.github.neodix42</groupId>
+    <groupId>org.ton.ton4j</groupId>
     <artifactId>smartcontract</artifactId>
     <version>1.3.2</version>
 </dependency>
@@ -35,7 +35,7 @@ Java libraries and wrapper for interacting with TON blockchain. ton4j requires m
 ```xml
 
 <dependency>
-    <groupId>io.github.neodix42</groupId>
+    <groupId>org.ton.ton4j</groupId>
     <artifactId>ton4j</artifactId>
     <version>1.3.2</version>
 </dependency>
@@ -92,17 +92,17 @@ You can use each submodule individually. Click the module below to get more deta
 
 ## Star History
 
-[![Star History Chart](https://api.star-history.com/svg?repos=neodiX42/ton4j&type=Date)](https://www.star-history.com/#neodiX42/ton4j&Date)
+[![Star History Chart](https://api.star-history.com/svg?repos=ton-blockchain/ton4j&type=Date)](https://www.star-history.com/#ton-blockchain/ton4j&Date)
 
 <!-- Badges -->
 
-[maven-central-svg]: https://img.shields.io/maven-central/v/io.github.neodix42/smartcontract
+[maven-central-svg]: https://img.shields.io/maven-central/v/org.ton.ton4j/smartcontract
 
-[maven-central]: https://mvnrepository.com/artifact/io.github.neodix42/smartcontract
+[maven-central]: https://mvnrepository.com/artifact/org.ton.ton4j/smartcontract
 
-[jitpack-svg]: https://jitpack.io/v/neodiX42/ton4j.svg
+[jitpack-svg]: https://jitpack.io/v/ton-blockchain/ton4j.svg
 
-[jitpack]: https://jitpack.io/#neodiX42/ton4j
+[jitpack]: https://jitpack.io/#ton-blockchain/ton4j
 
 [ton-svg]: https://img.shields.io/badge/Based%20on-TON-blue
 

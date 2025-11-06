@@ -467,7 +467,7 @@ public class TestHashMapE {
     assertThat(loadedDictX.elements.size()).isEqualTo(5);
   }
 
-  /** <a href="https://github.com/neodix42/ton4j/issues/63">issue 64</a> */
+  /** <a href="https://github.com/ton-blockchain/ton4j/issues/63">issue 64</a> */
   @Test
   public void testIssue63() throws IOException {
     String longDict =

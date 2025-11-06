@@ -9,7 +9,7 @@
 ```xml
 
 <dependency>
-    <groupId>io.github.neodix42</groupId>
+    <groupId>org.ton.ton4j</groupId>
     <artifactId>disassembler</artifactId>
     <version>1.3.2</version>
 </dependency>
@@ -31,6 +31,6 @@ byte[] accountStateCode = Utils.base64ToBytes(accountState.getAccount_state().ge
 String disassembledInstruction = Disassembler.fromBoc(accountStateCode);
 ```
 
-[maven-central-svg]: https://img.shields.io/maven-central/v/io.github.neodix42/disassembler?color=red
+[maven-central-svg]: https://img.shields.io/maven-central/v/org.ton.ton4j/disassembler?color=red
 
-[maven-central]: https://mvnrepository.com/artifact/io.github.neodix42/disassembler
+[maven-central]: https://mvnrepository.com/artifact/org.ton.ton4j/disassembler

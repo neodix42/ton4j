@@ -7,7 +7,7 @@ Java Lite-client wrapper uses JNA to access methods in native lite-client binary
 ```xml
 
 <dependency>
-    <groupId>io.github.neodix42</groupId>
+    <groupId>org.ton.ton4j</groupId>
     <artifactId>lite-client</artifactId>
     <version>1.3.2</version>
 </dependency>
@@ -18,7 +18,7 @@ Java Lite-client wrapper uses JNA to access methods in native lite-client binary
 ```xml
 
 <dependency>
-    <groupId>io.github.neodix42.ton4j</groupId>
+    <groupId>org.ton.ton4j</groupId>
     <artifactId>lite-client</artifactId>
     <version>1.3.2</version>
 </dependency>
@@ -39,9 +39,9 @@ String stdout = liteClient.executeLast();
 More examples in [LiteClientTest](../liteclient/src/test/java/org/ton/ton4j/liteclient/LiteClientTest.java) class.
 
 
-[maven-central-svg]: https://img.shields.io/maven-central/v/io.github.neodix42/liteclient
+[maven-central-svg]: https://img.shields.io/maven-central/v/org.ton.ton4j/liteclient
 
-[maven-central]: https://mvnrepository.com/artifact/io.github.neodix42/liteclient
+[maven-central]: https://mvnrepository.com/artifact/org.ton.ton4j/liteclient
 
 [ton-svg]: https://img.shields.io/badge/Based%20on-TON-blue
 

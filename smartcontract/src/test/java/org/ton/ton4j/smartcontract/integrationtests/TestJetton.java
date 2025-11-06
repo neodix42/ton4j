@@ -55,7 +55,7 @@ public class TestJetton {
             .adminAddress(adminWallet.getAddress())
             .content(
                 NftUtils.createOffChainUriCell(
-                    "https://raw.githubusercontent.com/neodix42/ton4j/main/1-media/neo-jetton.json"))
+                    "https://raw.githubusercontent.com/ton-blockchain/ton4j/main/1-media/neo-jetton.json"))
             .build();
 
     log.info("jetton minter address {}", minter.getAddress());
@@ -216,7 +216,7 @@ public class TestJetton {
             .adminAddress(adminWallet.getAddress())
             .content(
                 NftUtils.createOffChainUriCell(
-                    "https://raw.githubusercontent.com/neodix42/ton4j/main/1-media/neo-jetton.json"))
+                    "https://raw.githubusercontent.com/ton-blockchain/ton4j/main/1-media/neo-jetton.json"))
             .build();
 
     log.info("jetton minter address {}", minter.getAddress());
@@ -323,7 +323,7 @@ public class TestJetton {
             .adminAddress(adminWallet.getAddress())
             .content(
                 NftUtils.createOffChainUriCell(
-                    "https://raw.githubusercontent.com/neodix42/ton4j/main/1-media/neo-jetton.json"))
+                    "https://raw.githubusercontent.com/ton-blockchain/ton4j/main/1-media/neo-jetton.json"))
             .build();
 
     log.info("jetton minter address {}", minter.getAddress());
@@ -490,7 +490,7 @@ public class TestJetton {
             .adminAddress(adminWallet.getAddress())
             .content(
                 NftUtils.createOffChainUriCell(
-                    "https://raw.githubusercontent.com/neodix42/ton4j/main/1-media/neo-jetton.json"))
+                    "https://raw.githubusercontent.com/ton-blockchain/ton4j/main/1-media/neo-jetton.json"))
             .build();
 
     log.info("jetton minter address {}", minter.getAddress());
@@ -660,7 +660,7 @@ public class TestJetton {
             .adminAddress(adminWallet.getAddress())
             .content(
                 NftUtils.createOffChainUriCell(
-                    "https://raw.githubusercontent.com/neodix42/ton4j/main/1-media/neo-jetton.json"))
+                    "https://raw.githubusercontent.com/ton-blockchain/ton4j/main/1-media/neo-jetton.json"))
             .build();
 
     log.info("jetton minter address {} {}", minter.getAddress(), minter.getAddress().toRaw());
