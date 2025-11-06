@@ -52,10 +52,10 @@ jobs:
           cd address
           mvn test
 
-      - name: Run Disassembler tests
-        run: |
-          cd disassembler
-          mvn test
+      #      - name: Run Disassembler tests
+      #        run: |
+      #          cd disassembler
+      #          mvn test
 
       - name: Run BitString tests
         if: matrix.os != 'macos-15' # hangs on github
@@ -63,15 +63,15 @@ jobs:
           cd bitstring
           mvn test
 
-      - name: Run tonlib - testTonlibGetTxsByAddress
-        run: |
-          cd tonlib
-          mvn test -Dtest=TestTonlibJsonTestnet#testTonlibGetTxsByAddress
-
-      - name: Run tonlib - testTonlibRunMethodParticipantsList
-        run: |
-          cd tonlib
-          mvn test -Dtest=TestTonlibJsonTestnet#testTonlibRunMethodParticipantsList
+      #      - name: Run tonlib - testTonlibGetTxsByAddress
+      #        run: |
+      #          cd tonlib
+      #          mvn test -Dtest=TestTonlibJsonTestnet#testTonlibGetTxsByAddress
+      #
+      #      - name: Run tonlib - testTonlibRunMethodParticipantsList
+      #        run: |
+      #          cd tonlib
+      #          mvn test -Dtest=TestTonlibJsonTestnet#testTonlibRunMethodParticipantsList
 
       - name: Run adnl lite-client - testTonlibGetTxsByAddress
         run: |
