@@ -34,7 +34,7 @@ public class AdnlLiteClientTest {
 
   private static AdnlLiteClient client;
   private LiteClientConnectionPool pool;
-  private static final boolean mainnet = false;
+  private static final boolean mainnet = true;
 
   @BeforeAll
   static void tearBeforeAll() throws Exception {
