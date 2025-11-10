@@ -1,6 +1,5 @@
 package org.ton.ton4j.tlb;
 
-import io.github.thanglequoc.timerninja.TimerNinjaTracker;
 import java.io.Serializable;
 import java.math.BigInteger;
 import lombok.Builder;
@@ -113,7 +112,6 @@ public class BlockInfo implements Serializable {
     return result.endCell();
   }
 
-  @TimerNinjaTracker
   public static BlockInfo deserialize(CellSlice cs) {
     long magic = cs.loadUint(32).longValue();
     assert (magic == 0x9bc7a987L)

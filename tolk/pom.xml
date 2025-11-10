@@ -40,8 +40,6 @@
         <dependency>
             <groupId>org.ton.ton4j</groupId>
             <artifactId>utils</artifactId>
-            <version>${project.parent.version}</version>
-            <scope>compile</scope>
         </dependency>
         <dependency>
             <groupId>commons-codec</groupId>
@@ -75,7 +73,6 @@
         <dependency>
             <groupId>net.lingala.zip4j</groupId>
             <artifactId>zip4j</artifactId>
-            <version>${zip4j.version}</version>
         </dependency>
     </dependencies>
 
@@ -84,7 +81,7 @@
             <plugin>
                 <groupId>org.jacoco</groupId>
                 <artifactId>jacoco-maven-plugin</artifactId>
-                <version>0.8.11</version>
+                <version>${jacoco.maven.plugin.versoin}</version>
                 <executions>
                     <execution>
                         <goals>

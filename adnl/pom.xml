@@ -14,6 +14,21 @@
 
     <description>Pure Java implementation of LiteClient based on ADNL TCP protocol</description>
 
+    <url>https://github.com/ton-blockchain/ton4j</url>
+
+    <developers>
+        <developer>
+            <name>neodiX</name>
+            <email>neodiX@ton.org</email>
+        </developer>
+    </developers>
+
+    <scm>
+        <connection>scm:git:git://github.com/ton-blockchain/ton4j.git</connection>
+        <developerConnection>scm:git:ssh://github.com/ton-blockchain/ton4j.git</developerConnection>
+        <url>https://github.com/ton-blockchain/ton4j/tree/main</url>
+    </scm>
+
     <dependencies>
         <dependency>
             <groupId>org.bouncycastle</groupId>
@@ -22,21 +37,27 @@
         <dependency>
             <groupId>org.ton.ton4j</groupId>
             <artifactId>tl</artifactId>
-            <version>${project.parent.version}</version>
         </dependency>
         <!-- JSON handling for lite client -->
         <dependency>
             <groupId>com.google.code.gson</groupId>
             <artifactId>gson</artifactId>
         </dependency>
-
         <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter</artifactId>
-            <version>5.9.2</version>
             <scope>test</scope>
         </dependency>
-
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter-api</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter-engine</artifactId>
+            <scope>test</scope>
+        </dependency>
         <dependency>
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>

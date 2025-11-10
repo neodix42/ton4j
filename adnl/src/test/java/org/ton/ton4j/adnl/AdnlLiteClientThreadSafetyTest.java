@@ -1,6 +1,8 @@
 package org.ton.ton4j.adnl;
 
 import lombok.extern.slf4j.Slf4j;
+
+
 import org.junit.jupiter.api.Test;
 import org.ton.ton4j.tl.liteserver.responses.MasterchainInfo;
 import org.ton.ton4j.utils.Utils;
@@ -10,7 +12,8 @@ import java.util.List;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 /** Test class to verify thread safety of AdnlLiteClient */
 @Slf4j
@@ -55,9 +58,9 @@ public class AdnlLiteClientThreadSafetyTest {
                       MasterchainInfo info = client.getMasterchainInfo();
 
                       // Verify response
-                      assertNotNull(info, "MasterchainInfo should not be null");
-                      assertNotNull(info.getLast(), "Last block should not be null");
-                      assertTrue(info.getLast().getSeqno() > 0, "Seqno should be positive");
+                      assertNotNull(info);
+                      assertNotNull(info.getLast());
+                      assertTrue(info.getLast().getSeqno() > 0);
 
                       successCount.incrementAndGet();
                       log.info(
@@ -93,14 +96,11 @@ public class AdnlLiteClientThreadSafetyTest {
       log.info("Success rate: {}%", (successCount.get() * 100.0) / totalQueries);
 
       // Assertions
-      assertTrue(successCount.get() > 0, "At least some queries should succeed");
+      assertTrue(successCount.get() > 0);
 
       // We expect most queries to succeed, but allow for some network issues
       double successRate = (successCount.get() * 100.0) / totalQueries;
-      assertTrue(
-          successRate >= 80.0,
-          String.format("Success rate should be at least 80%%, but was %.1f%%", successRate));
-
+      assertTrue(successRate >= 80.0);
       log.info("Thread safety test passed!");
 
     } finally {
@@ -169,14 +169,10 @@ public class AdnlLiteClientThreadSafetyTest {
 
       // Concurrent execution should be faster (or at least not significantly slower)
       double speedup = (double) sequentialTime / concurrentTime;
-      log.info("Speedup factor: {:.2f}x", speedup);
+      log.info("Speedup factor: {}x", speedup);
 
       // We expect some speedup, but network latency might limit it
-      assertTrue(
-          speedup >= 0.8,
-          String.format(
-              "Concurrent execution should not be significantly slower than sequential. Speedup: %.2fx",
-              speedup));
+      assertTrue(speedup >= 0.8);
 
       log.info("Performance test passed!");
 
