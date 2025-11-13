@@ -69,7 +69,7 @@ public class TestTonSdkTestCasesTlbDeserialization {
     assertThat(internalMessageInfo.getSrcAddr().toAddress().toRaw()).isEqualTo(sourceAddress);
     assertThat(internalMessageInfo.getDstAddr().toAddress().toRaw()).isEqualTo(destinationAddress);
     assertThat(internalMessageInfo.getValue().getCoins()).isEqualTo(valueCoins);
-    assertThat(internalMessageInfo.getIHRFee()).isEqualTo(ihrFee);
+    assertThat(internalMessageInfo.getExtraFlags()).isEqualTo(ihrFee);
     assertThat(internalMessageInfo.getFwdFee()).isEqualTo(fwdFee);
     assertThat(internalMessageInfo.getCreatedLt()).isEqualTo(createdLt);
     assertThat(internalMessageInfo.getCreatedAt()).isEqualTo(createdAt.longValue());

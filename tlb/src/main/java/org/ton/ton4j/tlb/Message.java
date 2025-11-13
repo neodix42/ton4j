@@ -127,4 +127,14 @@ public class Message implements Serializable {
       return "";
     }
   }
+
+  public NewBounceBody getBounceBody() {
+    if (info instanceof  InternalMessageInfo) {
+      InternalMessageInfo internalMessageInfo = (InternalMessageInfo) info;
+      if ((internalMessageInfo.extraFlags.longValue() & 1) == 1) {
+        return NewBounceBody.deserialize(CellSlice.beginParse(body));
+      }
+    }
+    return null;
+  }
 }

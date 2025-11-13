@@ -21,7 +21,7 @@ public class MessagePrintInfo {
   String op;
   BigInteger fwdFee;
   BigInteger value;
-  BigInteger ihrFee;
+  BigInteger extraFlags;
   BigInteger createdAt;
   BigInteger createdLt;
   BigInteger importFee;
@@ -30,7 +30,7 @@ public class MessagePrintInfo {
   String comment;
 
   private static String header =
-      "| msgHash | in/out | type         | op        | value           | fwdFee          | ihrFee          | importFee       | timestamp           | lt             | src             | dst             | comment                    |";
+      "| msgHash | in/out | type         | op        | value           | fwdFee          | extraFlags      | importFee       | timestamp           | lt             | src             | dst             | comment                    |";
 
   public void printMessageInfo() {
     MessagePrintInfo msgFee = this;
@@ -46,9 +46,9 @@ public class MessagePrintInfo {
             isNull(msgFee.getFwdFee())
                 ? ""
                 : Utils.formatNanoValueZeroStripZeros(msgFee.getFwdFee()),
-            isNull(msgFee.getIhrFee())
+            isNull(msgFee.getExtraFlags())
                 ? ""
-                : Utils.formatNanoValueZeroStripZeros(msgFee.getIhrFee()),
+                : Utils.formatNanoValueZeroStripZeros(msgFee.getExtraFlags()),
             isNull(msgFee.getImportFee())
                 ? ""
                 : Utils.formatNanoValueZeroStripZeros(msgFee.getImportFee()),

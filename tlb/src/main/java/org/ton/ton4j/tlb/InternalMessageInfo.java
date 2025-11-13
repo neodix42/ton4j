@@ -39,7 +39,18 @@ public class InternalMessageInfo implements CommonMsgInfo, Serializable {
   MsgAddressInt srcAddr;
   MsgAddressInt dstAddr;
   CurrencyCollection value;
-  BigInteger iHRFee;
+
+  /**
+   * (extra_flags & 1) = 1 enables the new bounce format for the message. The bounced message
+   * contains information about the transaction. If (extra_flags & 3) = 3, the bounced message
+   * contains the whole body of the original message. Otherwise, only the bits from the root of the
+   * original body are returned.
+   *
+   * <p>All other bits in extra_flags are reserved for future use and are not allowed now (internal
+   * messages with flags other than 0..3 are invalid).
+   */
+  BigInteger extraFlags;
+
   BigInteger fwdFee;
   BigInteger createdLt;
   long createdAt;
@@ -61,7 +72,7 @@ public class InternalMessageInfo implements CommonMsgInfo, Serializable {
                 isNull(value)
                     ? CurrencyCollection.builder().coins(BigInteger.ZERO).build().toCell()
                     : value.toCell())
-            .storeCoins(isNull(iHRFee) ? BigInteger.ZERO : iHRFee)
+            .storeVarUint(isNull(extraFlags) ? BigInteger.ZERO : extraFlags, 16)
             .storeCoins(isNull(fwdFee) ? BigInteger.ZERO : fwdFee)
             .storeUint(isNull(createdLt) ? BigInteger.ZERO : createdLt, 64)
             .storeUint(createdAt, 32);
@@ -80,7 +91,7 @@ public class InternalMessageInfo implements CommonMsgInfo, Serializable {
         .srcAddr(MsgAddressInt.deserialize(cs))
         .dstAddr(MsgAddressInt.deserialize(cs))
         .value(CurrencyCollection.deserialize(cs))
-        .iHRFee(cs.loadCoins())
+        .extraFlags(cs.loadVarUInteger(16))
         .fwdFee(cs.loadCoins())
         .createdLt(cs.loadUint(64))
         .createdAt(cs.loadUint(32).longValue())
@@ -110,9 +121,5 @@ public class InternalMessageInfo implements CommonMsgInfo, Serializable {
   @Override
   public HashMap getExtraCurrencies() {
     return value.getExtraCurrencies().elements;
-  }
-
-  public BigInteger getTotalFees() {
-    return iHRFee.add(fwdFee);
   }
 }
