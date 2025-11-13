@@ -87,11 +87,6 @@ public class GenericSmartContract implements Contract {
   private static class CustomGenericSmartContractBuilder extends GenericSmartContractBuilder {
     @Override
     public GenericSmartContract build() {
-      if (isNull(super.publicKey)) {
-        if (isNull(super.keyPair)) {
-          super.keyPair = Utils.generateSignatureKeyPair();
-        }
-      }
       return super.build();
     }
   }
@@ -170,6 +165,29 @@ public class GenericSmartContract implements Contract {
         .info(ExternalMessageInInfo.builder().dstAddr(getAddressIntStd()).build())
         .init(getStateInit())
         .body(deployMessageBody)
+        .build();
+  }
+
+  public Cell createDeployMessage() {
+    return createDataCell();
+  }
+
+  @Override
+  public Message prepareDeployMsg() {
+    Cell body = createDeployMessage();
+
+    return Message.builder()
+        .info(ExternalMessageInInfo.builder().dstAddr(getAddressIntStd()).build())
+        .init(getStateInit())
+        .body(
+            CellBuilder.beginCell()
+                .storeBytes(
+                    isNull(keyPair)
+                        ? new byte[0]
+                        : Utils.signData(
+                            keyPair.getPublicKey(), keyPair.getSecretKey(), body.hash()))
+                .storeCell(body)
+                .endCell())
         .build();
   }
 }

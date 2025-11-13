@@ -1,5 +1,5 @@
 import "@stdlib/gas-payments"
-tolk 1.0
+tolk 1.1
 
 struct Storage {
     id: uint32

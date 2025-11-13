@@ -106,7 +106,7 @@ public class SmartContractCompiler {
     } else { // tolk
       outputFiftAsmFile = tolkRunner.run(new File(contractPath).getParent(), contractPath);
 
-      outputFiftAsmFile = "\"TonUtil.fif\" include " + outputFiftAsmFile + " 2 boc+>B dup Bx.";
+      outputFiftAsmFile = outputFiftAsmFile + " 2 boc+>B dup Bx.";
 
       outputFiftAsmFile =
           outputFiftAsmFile

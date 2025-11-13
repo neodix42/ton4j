@@ -18,6 +18,7 @@ import java.nio.file.Paths;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import lombok.Builder;
+import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -46,7 +47,7 @@ public class Tonlib {
       Address.of("-1:3333333333333333333333333333333333333333333333333333333333333333");
 
   /**
-   * If not specified then tries to find tonlib in system folder, more info <a
+   * If not specified then tries to find tonlib in the system folder, more info <a
    * href="https://github.com/ton-blockchain/packages">here</a>
    */
   public String pathToTonlibSharedLib;
@@ -76,6 +77,7 @@ public class Tonlib {
   private Boolean ignoreCache;
 
   /** Ignored if pathToGlobalConfig is not null. */
+  @Getter
   private boolean testnet;
 
   private boolean keystoreInMemory;
@@ -2126,7 +2128,7 @@ public class Tonlib {
     do {
       if (++i * 2 >= timeoutSeconds) {
         throw new Error(
-            "Balance of " + address.toRaw() + "was not changed within specified timeout.");
+            "Balance of " + address.toRaw() + " was not changed within specified timeout.");
       }
       Utils.sleep(2);
     } while (initialBalance.equals(getAccountBalance(address)));
@@ -2152,10 +2154,6 @@ public class Tonlib {
           Math.max(currentBalance.longValue(), initialBalance.longValue())
               - Math.min(currentBalance.longValue(), initialBalance.longValue());
     } while (diff < tolerateNanoCoins.longValue());
-  }
-
-  public boolean isTestnet() {
-    return testnet;
   }
 
   public void updateInitBlock() {

@@ -9,7 +9,7 @@ Java Emulator wrapper uses JNA to access methods in native emulator shared libra
 <dependency>
     <groupId>org.ton.ton4j</groupId>
     <artifactId>emulator</artifactId>
-    <version>1.3.3</version>
+    <version>1.3.4</version>
 </dependency>
 ```
 
@@ -20,7 +20,7 @@ Java Emulator wrapper uses JNA to access methods in native emulator shared libra
 <dependency>
     <groupId>org.ton.ton4j</groupId>
     <artifactId>emulator</artifactId>
-    <version>1.3.3</version>
+    <version>1.3.4</version>
 </dependency>
 ```
 

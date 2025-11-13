@@ -1615,7 +1615,7 @@ public class Utils {
    * download file at address, if address is not a http link returns the address
    *
    * @param linkToFile String
-   * @return absolute path to downloaded file or linkToFile if it is not a http url.
+   * @return absolute path to the downloaded file or linkToFile if it is not a http url.
    */
   public static String getLocalOrDownload(String linkToFile) {
     if (linkToFile.contains("http") && linkToFile.contains("://")) {

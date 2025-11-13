@@ -32,7 +32,7 @@ public class TestSmartContractCompiler extends CommonTest {
     TolkRunner tolkRunner =
         TolkRunner.builder()
             .tolkExecutablePath(Utils.getTolkGithubUrl())
-            .tolkExecutablePath(Utils.getArtifactGithubUrl("tolk", "tolk-1.0.0"))
+            .tolkExecutablePath(Utils.getArtifactGithubUrl("tolk", "tolk-1.1.1"))
             .build();
     URL resource = TestSmartContractCompiler.class.getResource("/test-1.0.tolk");
     File fiftFile = Paths.get(resource.toURI()).toFile();
